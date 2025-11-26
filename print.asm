@@ -1,76 +1,102 @@
 ; Routine per l'output di caratteri e stringhe
 
-!zone PrintChar
-; Titolo:                 ROUTINE: Stampa un carattere sul canale corrente
-; Nome:                   PRINTCHAR
+__PUTCHAR    = CHROUT      ; La routine di default per l'output di un carattere è CHROUT.
+
+!zone PrintECMChar
+; Titolo:                 ROUTINE: Invia un carattere sul canale corrente gestendo la modalità Colore di Sfondo Esteso (ECM).
+; Nome:                   PRINT_ECM_CHAR
 ; Descrizione:            Il carattere contenuto in .A viene inviato al canale corrente (solitamente lo schermo).
-;                         I codici PETSCII 0-31 e 128-159 vengono sempre inviati così come sono
-;                         Se l'Extended Color Mode è attivo i codici PETSCII 32-127 e 160-255 vengono mappati all'intervallo 32-95.
-;                         I codici PETSCII 1-4 vengono assumono un nuovo significato: cambiano il colore di sfondo dat utilizzare qualora l'ECM sia attivo
+;                         I codici PETSCII 0-31 e 128-159 vengono sempre inviati così come sono, con l'eccezione di {RVS} e {OFF}
+;                         (rispettivamente codice 18 e 146) perché interferirebbero col funzionamento dei codici 1-4 (vedi sotto).
+;                         Per lo stesso motivo i codici PETSCII 32-127 e 160-255 vengono mappati all'intervallo 32-95.
+;                         I codici PETSCII 1-4 vengono assumono un nuovo significato: essi selezionano il colore di sfondo da utilizzare:
+;                         1 = BGCOL0, 2 = BGCOL1, 3 = BGCOL2 e 4 = BGCOL3.
 ; Parametri di ingresso:  .A: Codice PETSCII da inviare al canale di output
 ; Parametri di uscita:    ---
-; Alterazioni registri:   .A
+; Alterazioni registri:   .A, .Y
 ; Alterazioni pag. zero:  TEMP_1, RVS
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
-PRINTCHAR:
-  php
+
+; Variabili locali
+._BGCOL           = TEMP_1
+
+PRINT_ECM_CHAR:
   stx ._TEMPX
-  bit SCROLY                    ; Controlla se l'ECM è attivo oppure no
-  bvc .Output                   ; Se no, vai subito alla stampa ed esci
+  tax                           ; Salva una copia del codice PETSCII originale
+  and #%01111111                ; ed azzera il bit più significativo.
 
-.CheckNull:
-  ora #0                        ; Resetta i flag, poi se il codice PETSCII è 0, passa all'output
-  beq .Output
+.CheckInvalid:
+  cpx #0                        ; Se il codice PETSCII è 0, esci senza stampare.
+  beq .Exit_PRINT_ECM_CHAR_Silent
 
-.CheckBGCodes:
-  cmp #5                        ; Se non è uno dei codici PETSCII speciali per il cambio del colore di sfondo (1-4), passa oltre
-  bcs .Convert                  ; altrimenti convertilo nell'intervallo 0-3 e salvalo in .BGCOL, poi finisci senza passare dall'output
-  sta .BGCOL
-  dec .BGCOL
-  jmp .Finish
+  cpx #5                        ; Se non è uno dei codici PETSCII speciali per il cambio del colore di sfondo (1-4), passa oltre
+  bcs .CheckControl             ; altrimenti convertilo nell'intervallo 0-3 e salvalo in .BGCOL, poi finisci senza passare dall'output.
+  dex
+  stx ._BGCOL
+  jmp .Exit_PRINT_ECM_CHAR_Silent
+
+.CheckControl:
+  cmp #18                       ; Se il codice PETSCII è {RVS} oppure {OFF}, esci senza stampare.
+  beq .Exit_PRINT_ECM_CHAR_Silent
+
+  cmp #32                       ; Se il codice PETSCII è un rimanente codice di controllo stampalo ed esci.
+  bcc .Output
 
 .Convert:
-  tax                           ; Salva una copia di .A
-  and #%01000000                ; Controlla il bit 6
-  beq .CheckHiRange             ; Se è 0 passa oltre
-  txa                           ; altrimenti recupera .A ed azzera il bit 5
-  and #%11011111
-  +Skip1                        ; e salta la prossima istruzione
+  cpx #255                      ; Il codice PETSCII 255 va trattato a parte:
+  bne .Normalize
+  lda #94                       ; il suo valore normalizzato è 94.
+  bne .ApplyBGCOL
 
-.CheckHiRange:
-  txa                           ; Recupera .A
-  cmp #160                      ; Se il codice PETSCII è maggiore o uguale a 160 azzera il bit 7
-  bcc .Apply128
-  and #%01111111
+.Normalize:
+  txa                           ; Recupera il codice PETSCII originale.
+  lsr a                         ; Qualunque codice che non sia stato intercettato in precedenza
+  lsr a                         ; viene normalizzato sostituendo i 3 bit più significativi
+  lsr a                         ; secondo le definizioni date dalla tabella .NORM_TABLE.
+  lsr a                         ; I 3 bit più significativi vengono trasformati in un indice
+  lsr a                         ; compreso tra 0 e 7.
 
-.Apply128:
-  ror .BGCOL                    ; Controlla se al codice carattere va aggiunto 128
-  bcc .ApplyRVS
-  ora #%10000000
+  tay                           ; Sposta l'indice in .Y,
+  txa                           ; recupera .A
+  and #%00011111                ; e sostituisci i 3 bit più significativi.
+  ora .NORM_TABLE,y
 
-.ApplyRVS:
-  ror .BGCOL                    ; L'informazione riguardo la modalità RVS è contenuta nel bit 1 di .BGCOL
-  bcc .ResetBGCOL
-  ldx #$FF
-  +Skip2
+.ApplyBGCOL:
+  tax                           ; Salva una copia di .A.
+  lda #0                        ; Disattiva la modalità reverse.
+  sta RVS
 
-.ResetBGCOL:
-  ldx #0
-  stx RVS
-  rol .BGCOL                    ; Rimetti a posto .BGCOL
-  rol .BGCOL
+  lda ._BGCOL                   ; Carica il registro colore in .A
+  cmp #2                        ; Se è > 1 allora attiva la modalità reverse.
+  bcc .Check_Shift
+  inc RVS
+
+.Check_Shift:
+  and #%00000001                ; Se il registro colore è pari allora stampa il codice
+  beq .Output
+  txa                           ; altrimenti incrementalo di 128.
+  adc #128
+  +Skip1
 
 .Output:
+  txa
   jsr CHROUT
 
-.Finish:
+.Exit_PRINT_ECM_CHAR_Silent:
   ldx ._TEMPX
-  plp
   rts
 
-.BGCOL            = TEMP_1
-._TEMPX           !byte 0
+.NORM_TABLE:
+  !byte %00000000               ; 0-31    > 0-31    %000 > %000
+  !byte %00100000               ; 32-63   > 32-63   %001 > %001
+  !byte %01000000               ; 64-95   > 64-95   %010 > %010
+  !byte %01000000               ; 96-127  > 64-95   %011 > %010
+  !byte %10000000               ; 128-159 > 128-159 %100 > %100
+  !byte %00100000               ; 160-191 > 32-63   %101 > %001
+  !byte %01000000               ; 192-223 > 64-95   %110 > %010
+  !byte %00100000               ; 224-255 > 32-63   %111 > %001
 
+._TEMPX           !byte 0
 
 !zone PlotChar
 ; Titolo:                 ROUTINE: Memorizza un carattere nella memoria schermo (PLOTCHAR) o cambiane il colore (COLCHAR)
