@@ -79,7 +79,7 @@ COLCHAR:
   !zone
 }
 ; Titolo:                 MACRO: Stampa una tabella di messaggi.
-; Nome:                   PRINT_MSG
+; Nome:                   Print_Msg
 ; Descrizione:            Stampa i messaggi di testo contenuti in una tabella in memoria.
 ;                         Un puntatore in pagina zero viene caricato con l'inizio della tabella e l'indirizzo del puntatore viene caricato in .A.
 ;                         Ciascun messaggio della tabella ha il seguente formato:
@@ -181,7 +181,7 @@ COLCHAR:
 }
 
 ; Titolo:                 MACRO: Stampa un singolo messaggio estratto da una tabella.
-; Nome:                   PRINT_NTH
+; Nome:                   Print_Nth
 ; Descrizione:            Stampa un messaggio di testo contenuto in una tabella in memoria, dato un indice.
 ;                         Un puntatore in pagina zero viene caricato con l'inizio della tabella e l'indirizzo del puntatore viene caricato in .A:
 ;                         Ciascun messaggio della tabella ha il seguente formato:
@@ -254,7 +254,7 @@ COLCHAR:
 }
 
 ; Titolo:                 MACRO: Stampa un messaggio puntato da .A /.Y.
-; Nome:                   PrintRaw
+; Nome:                   Print_Raw
 ; Descrizione:            Stampa un messaggio di testo la cui definizione è puntata da .A / .Y.
 ;                         Questa routine può sostituire la routine del BASIC STROUT in quanto non altera FAC o ARG.
 ;                         Il messaggio da stampare deve terminare con $00 e non supporta i due byte per posizionare
@@ -357,7 +357,7 @@ COLCHAR:
 }
 
 ; Titolo:                 MACRO: Invia un carattere sul canale corrente gestendo la modalità Colore di Sfondo Esteso (ECM).
-; Nome:                   PUT_ECM_CHAR
+; Nome:                   Put_ECM_Char
 ; Descrizione:            Il carattere contenuto in .A viene inviato al canale corrente (solitamente lo schermo).
 ;                         I codici PETSCII 0-31 e 128-159 vengono sempre inviati così come sono, con l'eccezione di {RVS} e {OFF}
 ;                         (rispettivamente codice 18 e 146) perché interferirebbero col funzionamento dei codici 1-4 (vedi sotto).
