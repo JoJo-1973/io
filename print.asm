@@ -210,7 +210,12 @@ COLCHAR:
     !set __PUTCHAR = CHROUT
   }
   PRINT_NTH:
-    tax                         ; Sposta l'indirizzo del puntatore in .X.
+    tax                         ; Sposta l'indirizzo del puntatore in .X
+    lda 0,x                     ; e salva l'indirizzo puntato sullo stack.
+    pha
+    lda 1,x
+    pha
+
     cpy #0                      ; Se .Y vale 0 stampa subito ed esci.
     beq .Print
 
@@ -245,10 +250,18 @@ COLCHAR:
 
   .Print:
     txa                         ; Sposta l'indirizzo del puntatore in .A
-    jmp PRINT_MSG               ; poi stampa il messaggio ed esci
+    jsr PRINT_MSG               ; poi stampa il messaggio ed esci
+    +Skip1
 
   .Exit_PRINT_NTH_Too_Large:
     sec
+
+  .Exit_PRINT_NTH:
+    pla                         ; Ripristina il contenuto originario del puntatore.
+    sta 1,x
+    pla
+    sta 0,x
+
     rts
   !zone
 }
@@ -270,7 +283,7 @@ COLCHAR:
     !set __PUTCHAR = CHROUT
   }
   PRINT_RAW:
-    sta ZP_5                    ; Inizializza il puntatore la messaggio
+    sta ZP_5                    ; Inizializza il puntatore al messaggio
     sty ZP_5+1
 
     ldy #0
