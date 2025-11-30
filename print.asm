@@ -1,6 +1,22 @@
 ; Routine per l'output di caratteri e stringhe
 
-
+; Titolo:                 MACRO: Posiziona il cursore sullo schermo.
+; Nome:                   At
+; Descrizione:            Posiziona il cursore sullo schermo usando la chiamata del kernal PLOT.
+;                         La macro compila in-line il classico codice per posizionare il cursore sullo schermo.
+;                         Siccome dimentico sempre l'ordine dei registri ed il codice è semplice e ripetitivo,
+;                         una macro è proprio quel che serve in questi casi!
+; Parametri di ingresso:  .X, .Y
+; Parametri di uscita:    ---
+; Alterazioni registri:   .A, .X, .Y
+; Alterazioni pag. zero:  ---
+; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
+!macro At row_, col_ {
+  clc
+  ldx #row_
+  ldy #col_
+  jsr PLOT
+}
 
 !macro PlotChar {
 !zone PlotChar
