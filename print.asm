@@ -400,7 +400,6 @@ COLCHAR:
 ; Alterazioni registri:   ---
 ; Alterazioni pag. zero:  TEMP_1, RVS
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
-
 !macro Put_ECM_Char {
   !zone Put_ECM_Char
   PUT_ECM_CHAR:
