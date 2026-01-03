@@ -30,14 +30,14 @@
 ;                         .Y: Riga della cella della memoria schermo
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   ---
-; Alterazioni pag. zero:  ZP_5, BGCOL
+; Alterazioni pag. zero:  INDEX2, BGCOL
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 PLOTCHAR:
   sta ._TEMPA
   +PushAXY
 
   lda HIBASE                    ; Inizializza il puntatore alla memoria schermo
-  sta ZP_5+1
+  sta INDEX2+1
   bit SCROLY                    ; Controlla se il modo colore esteso è attivo
   bvc .CalcCell
 
@@ -58,21 +58,21 @@ COLCHAR:
   sta ._TEMPA
   +PushAXY
   lda #>COLRAM                  ; Inizializza il puntatore alla memoria colore
-  sta ZP_5+1
+  sta INDEX2+1
 
 .CalcCell:
   clc                           ; Somma il valore della colonna selezionata al byte basso dell'offset della posizione iniziale della riga scelta
   txa
   adc .ROW_OFFSET_LO,y
-  sta ZP_5
+  sta INDEX2
 
   lda .ROW_OFFSET_HI,y          ; Fai la stessa cosa col byte alto, che viene sommato
-  adc ZP_5+1                    ; assieme al Carry generato dalla somma precedente
-  sta ZP_5+1                    ; al valore già presente in ZP_5+1
+  adc INDEX2+1                    ; assieme al Carry generato dalla somma precedente
+  sta INDEX2+1                    ; al valore già presente in INDEX2+1
 
   lda ._TEMPA                   ; ed infine recupera il valore del codice schermo (o del colore)
   ldy #0                        ; e scrivilo in memoria alla posizione calcolata
-  sta (ZP_5),y
+  sta (INDEX2),y
   +PullAXY
 
   rts
@@ -291,7 +291,7 @@ COLCHAR:
 ; Parametri di ingresso:  .A, .Y
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   .A, .X, .Y
-; Alterazioni pag. zero:  ZP_5
+; Alterazioni pag. zero:  INDEX2
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 !macro Print_Raw {
   !zone Print_Raw
@@ -299,17 +299,17 @@ COLCHAR:
     !set __PUTCHAR = CHROUT
   }
   PRINT_RAW:
-    sta ZP_5                    ; Inizializza il puntatore al messaggio
-    sty ZP_5+1
+    sta INDEX2                  ; Inizializza il puntatore al messaggio
+    sty INDEX2+1
 
     ldy #0
 
  .Loop_PrintChar:
-    lda (ZP_5),y                ; Carica il prossimo carattere da stampare in .A
+    lda (INDEX2),y              ; Carica il prossimo carattere da stampare in .A
     beq .Exit_PRINT_RAW         ; ed esci se $00
 
     jsr __PUTCHAR               ; altrimenti stampalo ed itera.
-    +Inc16 ZP_5
+    +Inc16 INDEX2
     +Bra .Loop_PrintChar
 
   .Exit_PRINT_RAW:
@@ -332,7 +332,7 @@ COLCHAR:
 ; Parametri di ingresso:  ---
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   .A, .X, .Y
-; Alterazioni pag. zero:  ZP_5
+; Alterazioni pag. zero:  INDEX2
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 !macro Print_Imm {
   !zone Print_Imm
@@ -340,45 +340,45 @@ COLCHAR:
     !set __PUTCHAR = CHROUT
   }
   PRINT_IMM:
-    pla                         ; Rimuovi l'indirizzo di ritorno dallo stack e memorizzalo in ZP_5.
-    sta ZP_5
+    pla                         ; Rimuovi l'indirizzo di ritorno dallo stack e memorizzalo in INDEX2.
+    sta INDEX2
     pla
-    sta ZP_5+1
+    sta INDEX2+1
 
     ldy #0
-    +Inc16 ZP_5                 ; Recupera la riga alla quale posizionare il cursore.
-    lda (ZP_5),y
+    +Inc16 INDEX2                 ; Recupera la riga alla quale posizionare il cursore.
+    lda (INDEX2),y
     cmp #$FF                    ; E' il marcatore di "posizione attuale"?
     bne .Coord                  ; No, estrai le coordinate
 
-    +Inc16 ZP_5                 ; altrimenti scarta il byte successivo.
+    +Inc16 INDEX2               ; altrimenti scarta il byte successivo.
     +Bra .PrintChar
 
   .Coord:
     pha
     iny                         ; Recupera anche la colonna.
-    lda (ZP_5),y
+    lda (INDEX2),y
     tay
     pla                         ; Sposta il valore della riga in .X
     tax
     clc                         ; e posiziona il cursore alle coordinate indicate.
     jsr PLOT
-    +Inc16 ZP_5
+    +Inc16 INDEX2
 
   .PrintChar:
     ldy #0
 
   .Loop_PrintChar:
-    +Inc16 ZP_5
-    lda (ZP_5),y
+    +Inc16 INDEX2
+    lda (INDEX2),y
     beq .Exit_PRINT_IMM
     jsr __PUTCHAR
     +Bra .Loop_PrintChar
 
   .Exit_PRINT_IMM:
-    lda ZP_5+1                  ; Rimetti l'indirizzo di ritorno sullo stack ed esci.
+    lda INDEX2+1                ; Rimetti l'indirizzo di ritorno sullo stack ed esci.
     pha
-    lda ZP_5
+    lda INDEX2
     pha
 
     rts
@@ -398,7 +398,7 @@ COLCHAR:
 ; Parametri di ingresso:  .A: Codice PETSCII da inviare al canale di output
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   ---
-; Alterazioni pag. zero:  TEMP_1, RVS
+; Alterazioni pag. zero:  BGCOL, RVS
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 !macro Put_ECM_Char {
   !zone Put_ECM_Char
