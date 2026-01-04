@@ -24,13 +24,13 @@
 ; Nome:                   PLOTCHAR / COLCHAR
 ; Descrizione:            Memorizza un carattere dato il suo codice schermo (PLOTCHAR) o cambiane il colore (COLCHAR) alle coordinate specificate.
 ;                         Se l'Extended Color Mode è attivo i codici schermo 64-255 vengono mappati all'intervallo 0-63: ed il colore di sfondo
-;                         viene scelto scrivendo un valore nell'intervallo 0-3 nel registro in pagina zero BGCOL.
+;                         viene scelto scrivendo un valore nell'intervallo 0-3 nel registro in pagina zero __BGCOL.
 ; Parametri di ingresso:  .A: Codice schermo del carattere da visualizzare (PLOTCHAR) o colore (COLCHAR)
 ;                         .X: Colonna della cella della memoria schermo
 ;                         .Y: Riga della cella della memoria schermo
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   ---
-; Alterazioni pag. zero:  INDEX2, BGCOL
+; Alterazioni pag. zero:  INDEX2, __BGCOL
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 PLOTCHAR:
   sta ._TEMPA
@@ -41,7 +41,7 @@ PLOTCHAR:
   bit SCROLY                    ; Controlla se il modo colore esteso è attivo
   bvc .CalcCell
 
-  lda BGCOL
+  lda __BGCOL
   ror a
   ror a
   ror a
@@ -398,7 +398,7 @@ COLCHAR:
 ; Parametri di ingresso:  .A: Codice PETSCII da inviare al canale di output
 ; Parametri di uscita:    ---
 ; Alterazioni registri:   ---
-; Alterazioni pag. zero:  BGCOL, RVS
+; Alterazioni pag. zero:  __BGCOL, RVS
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
 !macro Put_ECM_Char {
   !zone Put_ECM_Char
@@ -415,9 +415,9 @@ COLCHAR:
     beq .Exit_PUT_ECM_CHAR_Silent
 
     cpx #5                      ; Se non è uno dei codici PETSCII speciali per il cambio del colore di sfondo (1-4), passa oltre
-    bcs .CheckControl           ; altrimenti convertilo nell'intervallo 0-3 e salvalo in .BGCOL, poi finisci senza passare dall'output.
+    bcs .CheckControl           ; altrimenti convertilo nell'intervallo 0-3 e salvalo in __BGCOL, poi finisci senza passare dall'output.
     dex
-    stx BGCOL
+    stx __BGCOL
     jmp .Exit_PUT_ECM_CHAR_Silent
 
   .CheckControl:
@@ -451,7 +451,7 @@ COLCHAR:
     lda #0                      ; Disattiva la modalità reverse.
     sta RVS
 
-    lda BGCOL                   ; Carica il registro colore in .A
+    lda __BGCOL                 ; Carica il registro colore in .A
     cmp #2                      ; Se è > 1 allora attiva la modalità reverse.
     bcc .Check_Shift
     inc RVS
