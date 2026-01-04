@@ -18,8 +18,6 @@
   jsr PLOT
 }
 
-!macro PlotChar {
-!zone PlotChar
 ; Titolo:                 ROUTINE: Memorizza un carattere nella memoria schermo (PLOTCHAR) o cambiane il colore (COLCHAR)
 ; Nome:                   PLOTCHAR / COLCHAR
 ; Descrizione:            Memorizza un carattere dato il suo codice schermo (PLOTCHAR) o cambiane il colore (COLCHAR) alle coordinate specificate.
@@ -32,66 +30,68 @@
 ; Alterazioni registri:   ---
 ; Alterazioni pag. zero:  INDEX2, __BGCOL
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
-PLOTCHAR:
-  sta ._TEMPA
-  +PushAXY
+!macro PlotChar {
+  !zone PlotChar
+  PLOTCHAR:
+    sta ._TEMPA
+    +PushAXY
 
-  lda HIBASE                    ; Inizializza il puntatore alla memoria schermo
-  sta INDEX2+1
-  bit SCROLY                    ; Controlla se il modo colore esteso è attivo
-  bvc .CalcCell
+    lda HIBASE                  ; Inizializza il puntatore alla memoria schermo
+    sta INDEX2+1
+    bit SCROLY                  ; Controlla se il modo colore esteso è attivo
+    bvc .CalcCell
 
-  lda __BGCOL
-  ror a
-  ror a
-  ror a
-  and #%11000000
-  sta ._ECM_MASK
+    lda __BGCOL
+    ror a
+    ror a
+    ror a
+    and #%11000000
+    sta ._ECM_MASK
 
-  lda ._TEMPA                   ; Riprendi il codice schermo dallo stack
-  and #%00111111                ; cancella i 2 bit più significativi
-  ora ._ECM_MASK                ; ed applica i bit di selezione del registro di colore
-  sta ._TEMPA
-  +Bra .CalcCell                ; poi passa al calcolo della cella indicata da .X e .Y
+    lda ._TEMPA                 ; Riprendi il codice schermo dallo stack
+    and #%00111111              ; cancella i 2 bit più significativi
+    ora ._ECM_MASK              ; ed applica i bit di selezione del registro di colore
+    sta ._TEMPA
+    +Bra .CalcCell              ; poi passa al calcolo della cella indicata da .X e .Y
 
-COLCHAR:
-  sta ._TEMPA
-  +PushAXY
-  lda #>COLRAM                  ; Inizializza il puntatore alla memoria colore
-  sta INDEX2+1
+  COLCHAR:
+    sta ._TEMPA
+    +PushAXY
+    lda #>COLRAM                ; Inizializza il puntatore alla memoria colore
+    sta INDEX2+1
 
-.CalcCell:
-  clc                           ; Somma il valore della colonna selezionata al byte basso dell'offset della posizione iniziale della riga scelta
-  txa
-  adc .ROW_OFFSET_LO,y
-  sta INDEX2
+  .CalcCell:
+    clc                         ; Somma il valore della colonna selezionata al byte basso dell'offset della posizione iniziale della riga scelta
+    txa
+    adc .ROW_OFFSET_LO,y
+    sta INDEX2
 
-  lda .ROW_OFFSET_HI,y          ; Fai la stessa cosa col byte alto, che viene sommato
-  adc INDEX2+1                    ; assieme al Carry generato dalla somma precedente
-  sta INDEX2+1                    ; al valore già presente in INDEX2+1
+    lda .ROW_OFFSET_HI,y        ; Fai la stessa cosa col byte alto, che viene sommato
+    adc INDEX2+1                  ; assieme al Carry generato dalla somma precedente
+    sta INDEX2+1                  ; al valore già presente in INDEX2+1
 
-  lda ._TEMPA                   ; ed infine recupera il valore del codice schermo (o del colore)
-  ldy #0                        ; e scrivilo in memoria alla posizione calcolata
-  sta (INDEX2),y
-  +PullAXY
+    lda ._TEMPA                 ; ed infine recupera il valore del codice schermo (o del colore)
+    ldy #0                      ; e scrivilo in memoria alla posizione calcolata
+    sta (INDEX2),y
+    +PullAXY
 
-  rts
+    rts
 
-._ECM_MASK        !byte 0
-._TEMPA           !byte 0
-._TEMPY           !byte 0
+  ._ECM_MASK        !byte 0
+  ._TEMPA           !byte 0
+  ._TEMPY           !byte 0
 
-.ROW_OFFSET_LO:                 ; Byte basso degli offset della posizione iniziale di ciascuna riga dello schermo
-  !byte $00,$28,$50,$78,$a0,$c8,$f0,$18
-  !byte $40,$68,$90,$b8,$e0,$08,$30,$58
-  !byte $80,$a8,$d0,$f8,$20,$48,$70,$98
-  !byte $c0
+  .ROW_OFFSET_LO:               ; Byte basso degli offset della posizione iniziale di ciascuna riga dello schermo
+    !byte $00,$28,$50,$78,$a0,$c8,$f0,$18
+    !byte $40,$68,$90,$b8,$e0,$08,$30,$58
+    !byte $80,$a8,$d0,$f8,$20,$48,$70,$98
+    !byte $c0
 
-.ROW_OFFSET_HI:                 ; Byte alto degli offset della posizione iniziale di ciascuna riga dello schermo
-  !byte $00,$00,$00,$00,$00,$00,$00,$01
-  !byte $01,$01,$01,$01,$01,$02,$02,$02
-  !byte $02,$02,$02,$02,$03,$03,$03,$03
-  !byte $03
+  .ROW_OFFSET_HI:               ; Byte alto degli offset della posizione iniziale di ciascuna riga dello schermo
+    !byte $00,$00,$00,$00,$00,$00,$00,$01
+    !byte $01,$01,$01,$01,$01,$02,$02,$02
+    !byte $02,$02,$02,$02,$03,$03,$03,$03
+    !byte $03
   !zone
 }
 ; Titolo:                 MACRO: Stampa una tabella di messaggi.
