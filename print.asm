@@ -30,19 +30,19 @@
 ; Alterazioni registri:   ---
 ; Alterazioni pag. zero:  INDEX2, __BGCOL
 ; Dipendenze esterne:     symbols.asm, standard.asm, kernal.asm, vic_ii.asm, petscii.asm
-!macro PlotChar {
-  !zone PlotChar
-  PLOTCHAR:
+!macro Plot_Char {
+  !zone Plot_Char
+  PLOT_CHAR:
     sta ._TEMPA
     +PushAXY
 
-    lda HIBASE                  ; Inizializza il puntatore alla memoria schermo
+    lda HIBASE                  ; Inizializza il puntatore alla memoria schermo.
     sta INDEX2+1
     bit SCROLY                  ; Controlla se il modo colore esteso è attivo
-    bvc .CalcCell
+    bvc .Write_Char             ; e se non lo è vai direttamente al calcolo della cella.
 
-    lda __BGCOL
-    ror a
+    lda __BGCOL                 ; Trasforma il valore di __BGCOL in una maschera
+    ror a                       ; di bit, spostandone il valore nei bit #6 e #7.
     ror a
     ror a
     and #%11000000
@@ -52,29 +52,60 @@
     and #%00111111              ; cancella i 2 bit più significativi
     ora ._ECM_MASK              ; ed applica i bit di selezione del registro di colore
     sta ._TEMPA
-    +Bra .CalcCell              ; poi passa al calcolo della cella indicata da .X e .Y
 
-  COLCHAR:
+  .Write_Char:
+    jsr .Calc_Cell              ; Calcola la cella indicata da .X e .Y
+    lda ._TEMPA                 ; poi recupera il valore del codice schermo
+    ldy #0                      ; e scrivilo in memoria alla posizione calcolata.
+    sta (INDEX2),y
+    +PullAXY
+
+  .Exit_PLOT_CHAR:
+    rts
+
+  GET_CHAR:
+    +PushAXY
+    lda HIBASE                  ; Inizializza il puntatore alla memoria schermo.
+    sta INDEX2+1
+
+    jsr .Calc_Cell              ; Calcola la cella indicata da .X e .Y
+    ldy #0                      ; e scrivilo in memoria alla posizione calcolata.
+    lda (INDEX2),y
+    +PullAXY
+
+  .Exit_GET_CHAR:
+    rts
+
+
+  COLOR_CHAR:
     sta ._TEMPA
     +PushAXY
     lda #>COLRAM                ; Inizializza il puntatore alla memoria colore
     sta INDEX2+1
 
-  .CalcCell:
+  .Write_Color:
+    jsr .Calc_Cell              ; Calcola la cella indicata da .X e .Y
+    lda ._TEMPA                 ; poi recupera il valore del codice colore
+    ldy #0                      ; e scrivilo in memoria alla posizione calcolata.
+    sta (INDEX2),y
+    +PullAXY
+
+  .Exit_COLOR_CHAR:
+    rts
+
+  GET_COLOR_CHAR:
+
+  .Calc_Cell:
     clc                         ; Somma il valore della colonna selezionata al byte basso dell'offset della posizione iniziale della riga scelta
     txa
     adc .ROW_OFFSET_LO,y
     sta INDEX2
 
     lda .ROW_OFFSET_HI,y        ; Fai la stessa cosa col byte alto, che viene sommato
-    adc INDEX2+1                  ; assieme al Carry generato dalla somma precedente
-    sta INDEX2+1                  ; al valore già presente in INDEX2+1
+    adc INDEX2+1                ; assieme al Carry generato dalla somma precedente
+    sta INDEX2+1                ; al valore già presente in INDEX2+1
 
-    lda ._TEMPA                 ; ed infine recupera il valore del codice schermo (o del colore)
-    ldy #0                      ; e scrivilo in memoria alla posizione calcolata
-    sta (INDEX2),y
-    +PullAXY
-
+  .Exit_Calc_Cell:
     rts
 
   ._ECM_MASK        !byte 0
