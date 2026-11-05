@@ -493,6 +493,7 @@
 ;
 ; Registri Modificati:  .A, .Y, .P, INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
+;                       <mem/mem16.asm>
 ;                       <system/branch.asm>
 ; ==============================================================================
 !if (__USE_PRINT_RAW = 1) {
@@ -553,6 +554,7 @@
 ; Registri Modificati:  .A, .X, .Y, .P, INDEX2
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
+;                       <mem/mem16.asm>
 ;                       <system/branch.asm>
 ; ==============================================================================
 !if (__USE_PRINT_IMM = 1) {
