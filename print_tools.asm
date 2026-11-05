@@ -103,7 +103,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .X, .Y, .P
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry)
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ; ==============================================================================
 !macro m_At .row_, .col_ {
@@ -140,7 +140,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .P, INDEX2
+; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <chip/vic_ii.asm>
 ;                       <system/standard.asm>
@@ -203,7 +203,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .P, INDEX2
+; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <system/standard.asm>
 ;                       <system/vic_ii_tools.asm>
@@ -254,7 +254,8 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .X, .Y, .P (Carry), puntatore in ZP
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
+;                       puntatore in ZP
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <system/branch.asm>
 ;                       <system/standard.asm>
@@ -384,7 +385,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .X, .Y, .P (Carry)
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry)
 ; Dipendenze Esterne:   <system/standard.asm>
 ; ==============================================================================
 !if (__USE_PRINT_NTH = 1) {
@@ -491,7 +492,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .Y, .P, INDEX2
+; Registri Modificati:  .A, .Y, .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <mem/mem16.asm>
 ;                       <system/branch.asm>
@@ -551,7 +552,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .X, .Y, .P, INDEX2
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
 ;                       <mem/mem16.asm>
@@ -653,7 +654,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .P, __BGCOL, RVS
+; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BGCOL, RVS
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
 ;                       <chip/vic_ii.asm>
