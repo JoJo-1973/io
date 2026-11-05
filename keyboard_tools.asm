@@ -6,7 +6,7 @@
 ;to use inside irq, below code is enough :
 ; lda #$keycode
 ; jsr KEYSCAN
-; bcc +
+; bcs +
 ; inc $d020
 ;+  rts
 
@@ -32,21 +32,14 @@
 KEYSCAN:
   sty .Backup_Y+1               ; ATTENZIONE: codice automodificante per il salvataggio e ripristino di .Y. Vedi (**)
 
-  ldx #%11111111                ; Imponi i valori di default dei registri di direzione dati A e B
-  stx CIDDRA
-  inx
-  stx CIDDRB
 
   pha                           ; Salva il codice da scansionare sullo stack
-
-  sta STORAGE
 
   lsr a                         ; Il codice diviso 8 indica la riga da selezionare
   lsr a
   lsr a
   tay
 
-  sta STORAGE+1
 
   lda .KBD_ROW,y
   sta CIAPRA
@@ -54,12 +47,10 @@ KEYSCAN:
   and #%00000111                ; I 3 bit meno significativi indicano la colonna da scansionare
   tay
 
-  sta STORAGE+2
 
   lda CIAPRB
   and .KBD_COLUMN,y
 
-  sta STORAGE+3
 
   bne .No_Key                   ; Un risultato diverso da zero indica che il tasto non è stato premuto
 
@@ -68,38 +59,34 @@ KEYSCAN:
   lda CIAPRB
   and .KBD_COLUMN,y
 
-  sta STORAGE+4
 
   beq .No_Key
 
   cmp ._HISTORY                 ; Confronta il valore letto con la serie storica
   bne .No_Hold                  ; Se differiscono allora il tasto è stato premuto e rilasciato
-  clc                           ; in caso contrario non aggiornare la serie storica ed esci con C=0
-  bcc .Exit_KEYSCAN
+  clc                           ; (caso 3) in caso contrario non aggiornare la serie storica ed esci con C=0
+  bcc .Backup_Y
 
 .No_Key:
-  asl a                         ; Tasto non premuto (o interferenza del joystick): fai scorrere a sx la serie storica ed esci con C=0
+  asl a                         ; (caso 1) Tasto non premuto (o interferenza del joystick): fai scorrere a sx la serie storica ed esci con C=0
   clc
   +Skip1
 
 .No_Hold:
-  sec                           ; Tasto premuto e rilasciato: aggiornare la serie storica ed esci con C=1
+  sec                           ; (caso 2) Tasto premuto e rilasciato: aggiornare la serie storica ed esci con C=1
   sta ._HISTORY
 
-  sta STORAGE+5
+
+.Backup_Y:
+  ldy #$00                      ; (**) Ripristina .Y
 
 .Exit_KEYSCAN:
-  php
-  pla
-  sta STORAGE+6
 
   lda #%11111111                ; Rimetti le porte di lettura in stato di attesa
   sta CIAPRA
   lda #%01111111
   sta CIAPRB
 
-.Backup_Y:
-  ldy #$00                      ; (**) Ripristina .Y
   rts
 
 .KBD_ROW:
@@ -122,8 +109,6 @@ KEYSCAN:
   !byte %01000000
   !byte %10000000
 
-._LAST:
-  !byte 0
 
 ._HISTORY:
   !byte 0

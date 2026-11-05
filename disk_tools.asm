@@ -112,7 +112,7 @@ DISK_DIRECTORY:
 .DIR_PATTERN:
   !text "$0"
 
-._TEMP            
+._TEMP
   !byte 0       ; Variabile temporanea
 
 !zone
