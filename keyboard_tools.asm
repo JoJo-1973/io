@@ -6,7 +6,7 @@
 ;to use inside irq, below code is enough :
 ; lda #$keycode
 ; jsr KEYSCAN
-; bcs +
+; bcc +
 ; inc $d020
 ;+  rts
 
