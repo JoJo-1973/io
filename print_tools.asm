@@ -12,7 +12,7 @@
 ;                 PRINT_RAW       Stampa un messaggio puntato da .A / .Y
 ;                 PRINT_IMM       Stampa il messaggio che segue la chiamata
 ;                 m_Put_ECM_Char  Invia un carattere gestendo il modo ECM
-; DIPENDENZE:     Nessuna
+; DIPENDENZE:     <system/vic_ii_tools.asm>
 ; REQUISITI ZP:   __BGCOL
 ; ==============================================================================
 
@@ -86,6 +86,8 @@
 ; altrimenti eventuali messaggi seguenti sarebbero stampati con il colore di
 ; sfondo ECM_BG1.
 ; ******************************************************************************
+
+!source "vic_ii_tools.asm", once
 
 ; ==============================================================================
 ; MACRO: m_At
@@ -179,8 +181,11 @@
     .Exit_PLOT_CHAR:
       rts
 
-      ._ECM_MASK        !byte 0
-      ._TEMPA           !byte 0
+    ._ECM_MASK:
+      !byte 0
+
+    ._TEMPA:
+      !byte 0
 
   !zone
 }
@@ -225,7 +230,8 @@
     .Exit_COLOR_CHAR:
       rts
 
-      ._TEMPA           !byte 0
+    ._TEMPA:
+      !byte 0
 
   !zone
 }
@@ -359,7 +365,8 @@
                                     ; in tabella.
       rts
 
-      ._TEMPX           !byte 0
+    ._TEMPX:
+      !byte 0
 
   !zone
 }
@@ -752,9 +759,14 @@
       !byte %01000000               ; 192-223 > 64-95   %110 > %010
       !byte %00100000               ; 224-255 > 32-63   %111 > %001
 
-      ._TEMPA           !byte 0
-      ._TEMPX           !byte 0
-      ._TEMPY           !byte 0
+    ._TEMPA:
+      !byte 0
+
+    ._TEMPX:
+      !byte 0
+
+    ._TEMPY:
+      !byte 0
 
     .Skip_Table:
 
