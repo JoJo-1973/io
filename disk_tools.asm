@@ -231,8 +231,11 @@
     .Exit_DECODE_DISK_STATUS_Get_Number:
       rts
 
-      ._ERROR_CODE      !byte 0
-      ._TRACK           !byte 0
+    ._ERROR_CODE:
+      !byte 0
+
+    ._TRACK:
+      !byte 0
 
   !zone
 }
@@ -257,8 +260,9 @@
 ;               Il flag di Carry è l'esito: se si verifica un errore dell'unità
 ;               la subroutine va a capo, stampa il messaggio di stato dell'unità
 ;               (letto con DISK_STATUS) ed esce con il Carry a 1. La stampa dei
-;               numeri e del messaggio usa LINPRT e STROUT del BASIC, quindi il
-;               contenuto di FAC non è garantito.
+;               numeri e del messaggio usa LINPRT e STROUT del BASIC, che
+;               alterano proprie celle di lavoro (tra cui FAC): il loro
+;               contenuto non è garantito dopo la chiamata.
 ;
 ;               Richiede __USE_DISK_STATUS = 1.
 ;
@@ -273,7 +277,7 @@
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry), FAC,
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
 ;                       STACK (fino a 256 byte)
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
