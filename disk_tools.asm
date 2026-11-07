@@ -6,6 +6,7 @@
 ; CONTENUTO:      DISK_STATUS         Legge lo stato dell'unità disco
 ;                 DECODE_DISK_STATUS  Decodifica lo stato dell'unità disco
 ;                 DISK_DIRECTORY      Stampa la directory del disco
+;                 DISK_COMMAND        Invia un comando all'unità disco
 ; DIPENDENZE:     Nessuna
 ; REQUISITI ZP:   Nessuno
 ; ==============================================================================
@@ -271,8 +272,8 @@
 ;   - INDEX (2 byte, ZP)           : Puntatore al pattern, terminato da $00
 ;
 ; Output:
-;   - Flag Carry (1 bit, .P)       : 0 = directory stampata; 1 = pattern errato
-;                                    o errore dell'unità
+;   - Flag Carry (1 bit, .P)       : 0 = directory stampata; 1 = pattern errato,
+;                                    canale non aperto o errore dell'unità
 ;
 ; Variazione Stack (.S):
 ;   - Stabile
@@ -401,6 +402,119 @@
 
     .Exit_DISK_DIRECTORY_Bad_Pattern:
       sec                               ; Segnala l'errore: pattern errato.
+      rts
+
+  !zone
+}
+
+; ==============================================================================
+; SUBROUTINE: DISK_COMMAND
+; ------------------------------------------------------------------------------
+; Descrizione:  Invia un comando DOS all'unità disco indicata. Il comando è una
+;               stringa terminata da $00 puntata da INDEX e non può essere vuoto
+;               né superare i 40 caratteri: il DOS dell'unità tronca un comando
+;               più lungo, con risultati imprevedibili. La subroutine rifiuta un
+;               comando non valido senza inviarlo ed esce con il Carry a 1.
+;
+;               Il comando si invia aprendo il canale comandi (indirizzo
+;               secondario 15) con la stringa come nome del file: l'OPEN è tutto
+;               ciò che serve. Il file logico non può essere il 15, perché
+;               DISK_STATUS apre per conto suo il file logico 15 e l'OPEN
+;               fallirebbe se fosse già aperto: la subroutine usa il file logico
+;               88, lo stesso di DISK_DIRECTORY, e lo chiude dopo la lettura
+;               dello stato.
+;
+;               Il messaggio di stato con cui il DOS risponde al comando si
+;               legge con DISK_STATUS e si scrive in STACK, terminato da $00:
+;               occupa al massimo 256 byte e il chiamante lo usa subito (per
+;               esempio con STROUT, o con DECODE_DISK_STATUS per ricavarne il
+;               codice dell'errore). Il flag di Carry dice solo se il comando è
+;               stato inviato e lo stato letto, non se l'unità ha segnalato un
+;               errore. Se il canale comandi non si apre il comando non parte e
+;               STACK non viene scritto. Se invece non si riesce a leggere lo
+;               stato, il comando è comunque partito ma il Carry vale 1 e STACK
+;               non viene scritto.
+;
+;               Richiede __USE_DISK_STATUS = 1.
+;
+; Input:
+;   - .A (1 byte, CPU)             : Numero dell'unità disco
+;   - INDEX (2 byte, ZP)           : Puntatore al comando, terminato da $00
+;
+; Output:
+;   - STACK (fino a 256 byte, RAM) : Messaggio di stato terminato da $00, non
+;                                    scritto se il comando non è inviato
+;   - Flag Carry (1 bit, .P)       : 0 = comando inviato; 1 = errore (comando
+;                                    vuoto o più lungo di 40 caratteri, canale
+;                                    non aperto o stato non letto)
+;
+; Variazione Stack (.S):
+;   - Stabile
+;
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
+;                       STACK (fino a 256 byte)
+; Dipendenze Esterne:   <c64/kernal.asm>
+;                       <c64/symbols.asm>
+; ==============================================================================
+!if (__USE_DISK_COMMAND = 1) {
+  !zone Disk_Command
+
+    .MAX_COMMAND_LENGTH = 40            ; Lunghezza massima del comando
+    .COMMAND_FILE       = 88            ; Numero del file logico del comando
+
+    DISK_COMMAND:
+      tax                               ; Copia il numero dell'unità in .X.
+      lda #.COMMAND_FILE                ; Numero del file logico.
+      ldy #15                           ; Indirizzo secondario: canale comandi.
+      jsr SETLFS
+
+      ; Calcola la lunghezza del comando puntato da INDEX, escluso
+      ; lo $00 finale.
+      ldy #0
+
+    .Loop_Measure_Command:
+      lda (INDEX),y                     ; REPEAT
+      beq .Break_Measure_Command
+
+      iny
+
+    .Loop_Check_Command:
+      cpy #.MAX_COMMAND_LENGTH+1
+      bcc .Loop_Measure_Command         ; REPEAT UNTIL: il comando è troppo lungo
+
+    .Break_Measure_Command:
+      tya                               ; .A = lunghezza del comando.
+      beq .Exit_DISK_COMMAND_Bad_Command
+
+      cmp #.MAX_COMMAND_LENGTH+1
+      bcs .Exit_DISK_COMMAND_Bad_Command
+
+      ldx INDEX
+      ldy INDEX+1
+      jsr SETNAM
+
+      jsr OPEN                          ; Apre il canale comandi: invia il comando.
+      bcs .Exit_DISK_COMMAND_Error      ; Se ci sono errori chiude tutto ed esce.
+
+      lda FA                            ; Legge il messaggio di stato
+      jsr DISK_STATUS                   ; e lo scrive in STACK.
+      bcs .Exit_DISK_COMMAND_Error      ; Se non lo legge esce con errore.
+
+    .Exit_DISK_COMMAND:
+      clc                               ; Segnala il successo.
+
+    ; Raggiunta con il Carry a 1 se OPEN o DISK_STATUS falliscono:
+    ; il Carry viene conservato durante la chiusura.
+    .Exit_DISK_COMMAND_Error:
+      php                               ; Salva il Carry: 0 = successo, 1 = errore.
+      lda #.COMMAND_FILE                ; Chiude il file logico del comando
+      jsr CLOSE
+      jsr CLRCHN                        ; e resetta i canali di I/O.
+      plp                               ; Ripristina il Carry.
+      rts
+
+    .Exit_DISK_COMMAND_Bad_Command:
+      sec                               ; Segnala l'errore: comando non valido.
       rts
 
   !zone
