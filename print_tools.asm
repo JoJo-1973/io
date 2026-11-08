@@ -263,7 +263,6 @@
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
 ;                       puntatore in ZP
 ; Dipendenze Esterne:   <c64/kernal.asm>
-;                       <system/branch.asm>
 ;                       <system/standard.asm>
 ; ==============================================================================
 !if (__USE_PRINT_MSG = 1) {
@@ -290,42 +289,42 @@
       pha                           ; e salvalo sullo stack.
 
       cmp #$FF                      ; Se è diverso da $FF allora è una coordinata.
-      bne .Coord
+      bne .Else_Coord
 
       inc $00,x                     ; Esamina il byte successivo:
-      bne .Fetch_Char
+      bne .No_Carry_Marker
 
       inc $01,x
 
-    .Fetch_Char:
+    .No_Carry_Marker:
       lda ($00,x)
       cmp #$FF                      ; è il marcatore di fine messaggio?
-      bne .Print_Chars              ; No, allora stampa i caratteri che seguono nella posizione
+      bne .Else_Print_Chars         ; No, allora stampa i caratteri che seguono nella posizione
                                     ; corrente del cursore.
 
     .Clear_Stack:
       pla                           ; Pulisci lo stack e riporta il puntatore all'inizio del
       lda $00,x                     ; marcatore di fine tabella così che successive chiamate alla
                                     ; subroutine non abbiano effetto.
-      bne .Dec_Pointer_Low
+      bne .No_Borrow_Pointer
 
       dec $01,x
 
-    .Dec_Pointer_Low:
+    .No_Borrow_Pointer:
       dec $00,x
 
     .Exit_PRINT_MSG_End_Table:
       sec                           ; Setta C per segnalare la fine della tabella.
       rts
 
-    .Coord:
+    .Else_Coord:
       inc $00,x                     ; Recupera il byte con il numero di colonna alla quale muovere
                                     ; il cursore.
-      bne .Fetch_Column
+      bne .No_Carry_Column
 
       inc $01,x
 
-    .Fetch_Column:
+    .No_Carry_Column:
       stx ._TEMPX                   ; Salva .X.
       lda ($00,x)
       tay                           ; Il valore appena letto è la colonna dove muovere il cursore.
@@ -338,23 +337,24 @@
       ldx ._TEMPX                   ; Ora recupera .X
       +m_Skip1                      ; e salta la prossima istruzione.
 
-    .Print_Chars:
+    .Else_Print_Chars:
       pla                           ; Pulisci lo stack.
 
+      jmp .Loop_Check_Char          ; WHILE
+
     .Loop_Print_Char:
-      inc $00,x                     ; Punta al carattere da stampare
-      bne .Fetch_Next_Char
+      jsr __PUTCHAR                 ; Stampa il carattere.
+
+    .Loop_Check_Char:
+      inc $00,x                     ; Punta al carattere da stampare.
+      bne .No_Carry_Char
 
       inc $01,x
 
-    .Fetch_Next_Char:
+    .No_Carry_Char:
       lda ($00,x)
-      beq .Skip_Terminator          ; ma se vale $00 finisci.
+      bne .Loop_Print_Char          ; WHILE DO: il carattere non vale $00
 
-      jsr __PUTCHAR                 ; In caso contrario stampalo.
-      +m_Bra .Loop_Print_Char
-
-    .Skip_Terminator:
       inc $00,x
       bne .Exit_PRINT_MSG
 
@@ -442,11 +442,11 @@
       ; uno 0.
 
       inc $00,x                     ; REPEAT
-      bne .Read_Char
+      bne .Loop_Check_Null
 
       inc $01,x
 
-    .Read_Char:
+    .Loop_Check_Null:
       lda ($00,x)
       bne .Loop_Scan_Null           ; REPEAT UNTIL: il carattere letto vale 0
 
@@ -502,7 +502,6 @@
 ; Registri Modificati:  .A, .Y, .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <mem/mem16.asm>
-;                       <system/branch.asm>
 ; ==============================================================================
 !if (__USE_PRINT_RAW = 1) {
   !zone Print_Raw
@@ -527,13 +526,15 @@
 
       ldy #0
 
-    .Loop_Print_Char:
-      lda (INDEX2),y                ; Carica il prossimo carattere da stampare in .A
-      beq .Exit_PRINT_RAW           ; ed esci se $00
+      jmp .Loop_Check_Char          ; WHILE
 
-      jsr __PUTCHAR                 ; altrimenti stampalo ed itera.
-      +m_Inc16 INDEX2
-      +m_Bra .Loop_Print_Char
+    .Loop_Print_Char:
+      jsr __PUTCHAR                 ; Stampa il carattere
+      +m_Inc16 INDEX2               ; e passa al successivo.
+
+    .Loop_Check_Char:
+      lda (INDEX2),y                ; Carica il prossimo carattere da stampare in .A.
+      bne .Loop_Print_Char          ; WHILE DO: il carattere non vale $00
 
     .Exit_PRINT_RAW:
       rts
@@ -594,12 +595,12 @@
 
       lda (INDEX2),y
       cmp #$FF                      ; E' il marcatore di "posizione attuale"?
-      bne .Coord                    ; No, estrai le coordinate
+      bne .Else_Coord               ; No, estrai le coordinate
 
       +m_Inc16 INDEX2               ; altrimenti scarta il byte successivo.
       +m_Bra .Print_Char
 
-    .Coord:
+    .Else_Coord:
       pha
       iny                           ; Recupera anche la colonna.
       lda (INDEX2),y
@@ -613,13 +614,15 @@
     .Print_Char:
       ldy #0
 
+      jmp .Loop_Check_Char          ; WHILE
+
     .Loop_Print_Char:
+      jsr __PUTCHAR
+
+    .Loop_Check_Char:
       +m_Inc16 INDEX2
       lda (INDEX2),y
-      beq .Exit_PRINT_IMM
-
-      jsr __PUTCHAR
-      +m_Bra .Loop_Print_Char
+      bne .Loop_Print_Char          ; WHILE DO: il carattere non è 0
 
     .Exit_PRINT_IMM:
       lda INDEX2+1                  ; Rimetti l'indirizzo di ritorno sullo stack ed esci.
@@ -683,14 +686,14 @@
       beq .Exit_PUT_ECM_CHAR
 
       cpx #$05                      ; Se non è un codice PETSCII di cambio del colore di
-      bcs .Check_Control            ; sfondo (1-4) passa oltre, altrimenti convertilo in 0-3,
+      bcs .Else_If_Control          ; sfondo (1-4) passa oltre, altrimenti convertilo in 0-3,
                                     ; salvalo in __BGCOL e finisci senza stampare.
 
       dex
       stx __BGCOL
       jmp .Exit_PUT_ECM_CHAR
 
-    .Check_Control:
+    .Else_If_Control:
       cmp #$12                      ; Se il codice PETSCII è {RVS} oppure {OFF},
       beq .Exit_PUT_ECM_CHAR        ; esci senza stampare.
 
@@ -699,12 +702,12 @@
 
     .Convert:
       cpx #$FF                      ; Il codice PETSCII 255 va trattato a parte:
-      bne .Normalize
+      bne .Else_Normalize
 
       lda #$5E                      ; il suo valore normalizzato è 94.
       bne .Apply_BGCOL
 
-    .Normalize:
+    .Else_Normalize:
       txa                           ; Recupera il codice PETSCII originale.
       lsr a                         ; Qualunque codice non intercettato in precedenza
       lsr a                         ; viene normalizzato sostituendo i 3 bit più significativi
@@ -724,11 +727,11 @@
 
       lda __BGCOL                   ; Carica il registro colore in .A.
       cmp #$02                      ; Se è > 1 allora attiva la modalità reverse.
-      bcc .Check_Shift
+      bcc .No_Reverse
 
       inc RVS
 
-    .Check_Shift:
+    .No_Reverse:
       and #%00000001                ; Se il registro colore è pari allora stampa il codice PETSCII
       beq .Output
 
