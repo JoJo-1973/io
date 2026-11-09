@@ -32,12 +32,13 @@
 ; NOTA #02
 ; --------
 ; La serie storica, la cella in pagina zero __KBD_HISTORY, è un solo byte,
-; condiviso da tutti i tasti, e ricorda la sola colonna dell'ultima pressione,
-; non la riga. Il chiamante la azzera prima del primo uso. Quindi si controlla
-; un tasto per volta: se nello stesso passaggio si scansionano tasti diversi,
-; le chiamate si disturbano a vicenda e KEYSCAN segnala una nuova pressione a
-; ogni passaggio finché uno dei tasti resta premuto. Due tasti della stessa
-; colonna, poi, non si distinguono tra loro.
+; condiviso da tutti i tasti: finché il tasto resta premuto contiene la sola
+; colonna, non la riga, e al rilascio viene azzerata. Il chiamante la azzera
+; prima del primo uso. Quindi si controlla un tasto per volta: se nello stesso
+; passaggio si scansionano tasti diversi, le chiamate si disturbano a vicenda
+; e KEYSCAN segnala una nuova pressione a ogni passaggio finché uno dei tasti
+; resta premuto. Due tasti della stessa colonna, poi, non si
+; distinguono tra loro.
 ;
 ;
 ; NOTA #03
@@ -141,8 +142,9 @@
 ;
 ;               Il codice tastiera è la posizione del tasto nella matrice, cioè
 ;               la riga per 8 più la colonna (KBD_*, da $00 a $3F). La serie
-;               storica, __KBD_HISTORY, è un solo byte che ricorda l'ultima
-;               colonna premuta.
+;               storica, __KBD_HISTORY, è un solo byte: contiene la maschera
+;               della colonna finché il tasto resta premuto e vale zero dopo
+;               il rilascio.
 ;
 ;               Il Carry segnala il falso tasto: la colonna risulta bassa
 ;               anche senza nessuna riga selezionata, quindi la causa è
@@ -272,7 +274,7 @@
       bne .Exit_KEYSCAN
 
     .No_Key:
-      asl a                       ; Tasto non premuto: fai scorrere a sinistra la serie storica.
+      lda #$00                    ; Tasto non premuto: azzera la serie storica.
       sta __KBD_HISTORY
 
       lda #%00000010              ; Tasto non premuto: Negative = 0, Zero = 1.
