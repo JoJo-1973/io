@@ -13,7 +13,7 @@
 ;                 PRINT_IMM       Stampa il messaggio che segue la chiamata
 ;                 m_Put_ECM_Char  Invia un carattere gestendo il modo ECM
 ; DIPENDENZE:     <system/vic_ii_tools.asm>
-; REQUISITI ZP:   __BGCOL
+; REQUISITI ZP:   __BG_COL
 ; ==============================================================================
 
 ; ******************************************************************************
@@ -39,30 +39,30 @@
 ; NOTA #02
 ; --------
 ; Le subroutine PRINT_* possono essere personalizzate con una propria subroutine
-; di stampa modificando il valore del punto di configurazione __PUTCHAR.
+; di stampa modificando il valore del punto di configurazione __PUT_CHAR.
 ;
 ; Esempio 1: Driver di stampa in modo ECM.
 ;
-; __PUTCHAR:
+; __PUT_CHAR:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;
-; .Exit___PUTCHAR:
+; .Exit___PUT_CHAR:
 ;   rts
 ;
 ; Esempio 2: Driver di stampa in modo ECM a doppia spaziatura.
 ;
-; __PUTCHAR:
+; __PUT_CHAR:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;   lda #$1D                      ; Codice PETSCII per spostare il cursore
 ;                                 ; a destra di una posizione
 ;   jsr CHROUT
 ;
-; .Exit___PUTCHAR:
+; .Exit___PUT_CHAR:
 ;   rts
 ;
 ; Esempio 3: Driver di stampa in verticale.
 ;
-; __PUTCHAR:
+; __PUT_CHAR:
 ;   jsr CHROUT                    ; Stampa il carattere
 ;
 ;   lda #$11                      ; Codice PETSCII per spostare il cursore
@@ -72,7 +72,7 @@
 ;                                 ; a sinistra di una posizione
 ;   jsr CHROUT
 ;
-; .Exit___PUTCHAR:
+; .Exit___PUT_CHAR:
 ;   rts
 ;
 ;
@@ -123,21 +123,22 @@
 ;               Sfondo Esteso. Se questo modo è attivo il codice schermo del
 ;               carattere è automaticamente riportato all'intervallo 0-63 e
 ;               viene scritto utilizzando il registro colore che è codificato
-;               in __BGCOL:
-;                 __BGCOL = 0: Usa il colore memorizzato in BGCOL0
-;                 __BGCOL = 1: Usa il colore memorizzato in BGCOL1
-;                 __BGCOL = 2: Usa il colore memorizzato in BGCOL2
-;                 __BGCOL = 3: Usa il colore memorizzato in BGCOL3
+;               in __BG_COL:
+;                 __BG_COL = 0: Usa il colore memorizzato in BGCOL0
+;                 __BG_COL = 1: Usa il colore memorizzato in BGCOL1
+;                 __BG_COL = 2: Usa il colore memorizzato in BGCOL2
+;                 __BG_COL = 3: Usa il colore memorizzato in BGCOL3
 ;               Richiede __USE_COMPUTE_CELL_ADDRESS = 1.
 ;
 ; Input:
-;   - .A (1 byte, CPU)     : Codice schermo del carattere
-;   - .X (1 byte, CPU)     : Colonna della cella (0-39)
-;   - .Y (1 byte, CPU)     : Riga della cella (0-24)
-;   - __BGCOL (1 byte, ZP) : Selettore del registro di sfondo (0-3), solo in ECM
+;   - .A (1 byte, CPU)      : Codice schermo del carattere
+;   - .X (1 byte, CPU)      : Colonna della cella (0-39)
+;   - .Y (1 byte, CPU)      : Riga della cella (0-24)
+;   - __BG_COL (1 byte, ZP) : Selettore del registro di sfondo (0-3),
+;                             solo in ECM
 ;
 ; Output:
-;   - Cella (1 byte, RAM)  : Cella dello schermo alla riga e colonna indicate
+;   - Cella (1 byte, RAM)   : Cella dello schermo alla riga e colonna indicate
 ;
 ; Variazione Stack (.S):
 ;   - Stabile
@@ -158,7 +159,7 @@
       bit SCROLY                    ; Controlla se il modo Colore di Sfondo Esteso (ECM) è attivo
       bvc .Write_Char               ; e se non lo è vai direttamente al calcolo della cella.
 
-      lda __BGCOL                   ; Trasforma il valore di __BGCOL in una maschera
+      lda __BG_COL                  ; Trasforma il valore di __BG_COL in una maschera
       ror a                         ; di bit, spostandone il valore nei bit #6 e #7.
       ror a
       ror a
@@ -270,17 +271,17 @@
 
     PRINT_MSG:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUTCHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
       ; *                                                              *
-      ; * Dopo ogni jsr __PUTCHAR la subroutine si aspetta che il      *
+      ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .X sia invariato. CHROUT lo preserva, ma una        *
       ; * subroutine di stampa personalizzata no, e in quel caso il    *
       ; * puntatore in ZP, indicizzato con .X, verrebbe letto e        *
       ; * scritto nella locazione sbagliata.                           *
       ; *                                                              *
       ; * Da correggere: salvare .X in una cella temporanea prima di   *
-      ; * ogni jsr __PUTCHAR e ripristinarlo dopo, senza imporre       *
-      ; * condizioni a __PUTCHAR.                                      *
+      ; * ogni jsr __PUT_CHAR e ripristinarlo dopo, senza imporre      *
+      ; * condizioni a __PUT_CHAR.                                     *
       ; ****************************************************************
 
       tax                           ; Trasferisci l'indirizzo del puntatore in .X.
@@ -343,7 +344,7 @@
       jmp .Loop_Check_Char          ; WHILE
 
     .Loop_Print_Char:
-      jsr __PUTCHAR                 ; Stampa il carattere.
+      jsr __PUT_CHAR                ; Stampa il carattere.
 
     .Loop_Check_Char:
       inc $00,x                     ; Punta al carattere da stampare.
@@ -405,7 +406,7 @@
       ; * PRINT_NTH dipende dalla stessa condizione in modo indiretto: *
       ; * dopo jsr PRINT_MSG ripristina il puntatore con sta 1,x e sta *
       ; * 0,x e quindi si aspetta .X invariato, cosa che PRINT_MSG     *
-      ; * garantisce solo se __PUTCHAR preserva .X.                    *
+      ; * garantisce solo se __PUT_CHAR preserva .X.                    *
       ; *                                                              *
       ; * Si risolve correggendo PRINT_MSG.                            *
       ; ****************************************************************
@@ -508,17 +509,17 @@
 
     PRINT_RAW:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUTCHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
       ; *                                                              *
-      ; * Dopo ogni jsr __PUTCHAR la subroutine si aspetta che il      *
+      ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .Y sia invariato. CHROUT lo preserva, ma una        *
       ; * subroutine di stampa personalizzata no, e in quel caso       *
       ; * l'indice del loop, che vale 0, verrebbe alterato e lda       *
       ; * (INDEX2),y leggerebbe il carattere sbagliato.                *
       ; *                                                              *
       ; * Da correggere: azzerare .Y con ldy #0 prima di ogni lettura, *
-      ; * o salvarlo prima del jsr __PUTCHAR, senza imporre condizioni *
-      ; * a __PUTCHAR.                                                 *
+      ; * o salvarlo prima del jsr __PUT_CHAR, senza imporre           *
+      ; * condizioni a __PUT_CHAR.                                     *
       ; ****************************************************************
 
       sta INDEX2                    ; Inizializza il puntatore al messaggio.
@@ -529,7 +530,7 @@
       jmp .Loop_Check_Char          ; WHILE
 
     .Loop_Print_Char:
-      jsr __PUTCHAR                 ; Stampa il carattere
+      jsr __PUT_CHAR                ; Stampa il carattere
       +m_Inc16 INDEX2               ; e passa al successivo.
 
     .Loop_Check_Char:
@@ -571,17 +572,17 @@
 
     PRINT_IMM:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUTCHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
       ; *                                                              *
-      ; * Dopo ogni jsr __PUTCHAR la subroutine si aspetta che il      *
+      ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .Y sia invariato. CHROUT lo preserva, ma una        *
       ; * subroutine di stampa personalizzata no, e in quel caso       *
       ; * l'indice del loop, che vale 0, verrebbe alterato e lda       *
       ; * (INDEX2),y leggerebbe il carattere sbagliato.                *
       ; *                                                              *
       ; * Da correggere: azzerare .Y con ldy #0 prima di ogni lettura, *
-      ; * o salvarlo prima del jsr __PUTCHAR, senza imporre condizioni *
-      ; * a __PUTCHAR.                                                 *
+      ; * o salvarlo prima del jsr __PUT_CHAR, senza imporre           *
+      ; * condizioni a __PUT_CHAR.                                     *
       ; ****************************************************************
 
       pla                           ; Rimuovi l'indirizzo di ritorno dallo stack e memorizzalo
@@ -617,7 +618,7 @@
       jmp .Loop_Check_Char          ; WHILE
 
     .Loop_Print_Char:
-      jsr __PUTCHAR
+      jsr __PUT_CHAR
 
     .Loop_Check_Char:
       +m_Inc16 INDEX2
@@ -640,7 +641,7 @@
 ; ------------------------------------------------------------------------------
 ; Descrizione:  Questa macro non è pensata per essere usata a sé stante, ma come
 ;               mattone da costruzione per un proprio driver di stampa da
-;               utilizzare nel punto di configurazione __PUTCHAR [NOTA #02]:
+;               utilizzare nel punto di configurazione __PUT_CHAR [NOTA #02]:
 ;               infatti la macro non termina con un RTS ma con un salto alla
 ;               fine del suo codice in modo da poter essere concatenata con
 ;               altre istruzioni [NOTA #02]. Nello specifico questa macro
@@ -654,17 +655,17 @@
 ;               colore di sfondo da utilizzare [NOTA #03].
 ;
 ; Input:
-;   - .A (1 byte, CPU)     : Codice PETSCII da stampare
-;   - __BGCOL (1 byte, ZP) : Selettore del colore di sfondo (0-3)
+;   - .A (1 byte, CPU)      : Codice PETSCII da stampare
+;   - __BG_COL (1 byte, ZP) : Selettore del colore di sfondo (0-3)
 ;
 ; Output:
-;   - __BGCOL (1 byte, ZP) : Nuovo selettore (se il codice è ECM_BG[0-3])
-;   - RVS (1 byte, ZP)     : Modo reverse (1 se __BGCOL > 1)
+;   - __BG_COL (1 byte, ZP) : Nuovo selettore (se il codice è ECM_BG[0-3])
+;   - RVS (1 byte, ZP)      : Modo reverse (1 se __BG_COL > 1)
 ;
 ; Variazione Stack (.S):
 ;   - Stabile
 ;
-; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BGCOL, RVS
+; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BG_COL, RVS
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
 ;                       <chip/vic_ii.asm>
@@ -687,10 +688,10 @@
 
       cpx #$05                      ; Se non è un codice PETSCII di cambio del colore di
       bcs .Else_If_Control          ; sfondo (1-4) passa oltre, altrimenti convertilo in 0-3,
-                                    ; salvalo in __BGCOL e finisci senza stampare.
+                                    ; salvalo in __BG_COL e finisci senza stampare.
 
       dex
-      stx __BGCOL
+      stx __BG_COL
       jmp .Exit_PUT_ECM_CHAR
 
     .Else_If_Control:
@@ -725,7 +726,7 @@
       lda #0                        ; Disattiva la modalità reverse.
       sta RVS
 
-      lda __BGCOL                   ; Carica il registro colore in .A.
+      lda __BG_COL                  ; Carica il registro colore in .A.
       cmp #$02                      ; Se è > 1 allora attiva la modalità reverse.
       bcc .No_Reverse
 
@@ -750,7 +751,7 @@
 
       +m_Bra .Skip_Table            ; Salta oltre la tabella dei dati al codice che segue la
                                     ; macro: in tal modo è possibile costruire una subroutine
-                                    ; __PUTCHAR concatenando questa macro con altro codice.
+                                    ; __PUT_CHAR concatenando questa macro con altro codice.
 
     .NORM_TABLE:
       !byte %00000000               ; 0-31    > 0-31    %000 > %000
