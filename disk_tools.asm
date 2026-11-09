@@ -247,7 +247,7 @@
 ; Descrizione:  Stampa la directory del disco dell'unità indicata, una voce per
 ;               linea: la lunghezza in blocchi, uno spazio e il nome. Apre un
 ;               canale dati (file logico 88, indirizzo secondario 0), legge la
-;               directory come un programma e stampa ogni linea con __PUTCHAR.
+;               directory come un programma e stampa ogni linea con __PUT_CHAR.
 ;
 ;               I file da elencare si scelgono con un pattern: una stringa
 ;               terminata da $00 puntata da INDEX (per esempio "$0"). La
@@ -334,7 +334,7 @@
 
     .Loop_Print_Line:
       lda #$0D                          ; Va a capo prima di ogni linea.
-      jsr __PUTCHAR
+      jsr __PUT_CHAR
 
       ; Legge i due byte della lunghezza in blocchi (prima il byte
       ; basso) e li stampa.
@@ -344,12 +344,12 @@
       jsr LINPRT
 
       lda #$20                          ; Stampa uno spazio separatore.
-      jsr __PUTCHAR
+      jsr __PUT_CHAR
 
       jmp .Loop_Check_Char              ; WHILE
 
     .Loop_Print_Char:
-      jsr __PUTCHAR
+      jsr __PUT_CHAR
 
     .Loop_Check_Char:
       jsr READST
@@ -381,7 +381,7 @@
 
     .Exit_DISK_DIRECTORY_Error:
       lda #$0D                          ; Va a capo
-      jsr __PUTCHAR
+      jsr __PUT_CHAR
       lda FA                            ; e legge il messaggio di stato.
       jsr DISK_STATUS
       bcs .Exit_DISK_DIRECTORY          ; Se non si legge, non stampa nulla.
