@@ -16,17 +16,17 @@
 ;
 ; NOTA #01
 ; --------
-; KEYSCAN non cerca quale tasto sia premuto e non restituisce il keycode di un
-; tasto: fa l'inverso. Riceve il keycode di un tasto e verifica se quel tasto
-; è stato appena premuto. Non è adatta a scoprire quale tasto sia premuto tra
-; tutti, perché non scansiona l'intera matrice.
+; KEYSCAN non cerca quale tasto sia premuto e non restituisce il codice tastiera
+; di un tasto: fa l'inverso. Riceve il codice tastiera di un tasto e verifica se
+; quel tasto è stato appena premuto. Non è adatta a scoprire quale tasto sia
+; premuto tra tutti, perché non scansiona l'intera matrice.
 ;
 ; KEYSCAN controlla un tasto per volta e va chiamata a ogni passaggio di
 ; lettura. Segnala una nuova pressione una sola volta: finché il tasto resta
-; premuto, le chiamate successive non riportano niente di nuovo. Un keycode
-; non valido (da KBD_NO_KEY in su) è un errore, come il falso tasto. Con il
-; Carry a 0, il flag di Negative dice se il tasto è premuto e il flag di Zero
-; se la pressione è nuova. Gli esempi sono nelle note da [NOTA #03] in poi.
+; premuto, le chiamate successive non riportano niente di nuovo. Un codice
+; tastiera non valido (da KBD_NO_KEY in su) è un errore, come il falso tasto.
+; Con il Carry a 0, il flag di Negative dice se il tasto è premuto e il flag di
+; Zero se la pressione è nuova. Gli esempi sono nelle note da [NOTA #03] in poi.
 ;
 ;
 ; NOTA #02
@@ -128,19 +128,19 @@
 ; ==============================================================================
 ; SUBROUTINE: KEYSCAN
 ; ------------------------------------------------------------------------------
-; Descrizione:  Verifica se un tasto, indicato dal suo keycode, è stato appena
-;               premuto. Legge la matrice della tastiera direttamente dal CIA #1
-;               e presuppone che i registri di direzione dei suoi due porti
-;               abbiano i valori predefiniti ($FF e $00).
+; Descrizione:  Verifica se un tasto, indicato dal suo codice tastiera, è stato
+;               appena premuto. Legge la matrice della tastiera direttamente dal
+;               CIA #1 e presuppone che i registri di direzione dei suoi due
+;               porti abbiano i valori predefiniti ($FF e $00).
 ;
-;               Non cerca il tasto premuto e non ne restituisce il keycode: il
-;               keycode è un dato in ingresso.
+;               Non cerca il tasto premuto e non ne restituisce il codice
+;               tastiera: il codice tastiera è un dato in ingresso.
 ;
-;               Un keycode da KBD_NO_KEY in su non è valido: la subroutine
-;               esce subito con il Carry a 1, senza toccare le porte.
+;               Un codice tastiera da KBD_NO_KEY in su non è valido: la
+;               subroutine esce subito con il Carry a 1, senza toccare le porte.
 ;
-;               Il keycode è la posizione del tasto nella matrice, cioè la
-;               riga per 8 più la colonna (KBD_*, da $00 a $3F). La serie
+;               Il codice tastiera è la posizione del tasto nella matrice, cioè
+;               la riga per 8 più la colonna (KBD_*, da $00 a $3F). La serie
 ;               storica, __KBD_HISTORY, è un solo byte che ricorda l'ultima
 ;               colonna premuta.
 ;
@@ -151,7 +151,7 @@
 ;               di Zero se la pressione è nuova.
 ;
 ; Input:
-;   - .A (1 byte, CPU)             : Keycode del tasto da scansionare
+;   - .A (1 byte, CPU)             : Codice tastiera del tasto da scansionare
 ;   - __KBD_HISTORY (1 byte, ZP)   : Serie storica, da azzerare prima del
 ;                                    primo uso
 ;
@@ -163,7 +163,7 @@
 ;   - Flag Zero (1 bit, .P)        : 0 = nuova pressione; 1 = tasto non premuto
 ;                                    o ancora tenuto. Indefinito se Carry = 1
 ;   - Flag Carry (1 bit, .P)       : 0 = lettura valida; 1 = falso tasto o
-;                                    keycode non valido
+;                                    codice tastiera non valido
 ;
 ; Variazione Stack (.S):
 ;   - Stabile
@@ -179,11 +179,11 @@
 
     KEYSCAN:
       ; ****************************************************************
-      ; * TO-DO: soglia dei keycode con __C128_C64_MODE = 1.           *
+      ; * TO-DO: soglia dei codici tastiera con __C128_C64_MODE = 1.   *
       ; *                                                              *
-      ; * Che cosa fa il codice: scarta i keycode da KBD_NO_KEY in su  *
-      ; * e legge la matrice con le tabelle .KBD_ROW e .KBD_COLUMN,    *
-      ; * che hanno 8 voci ciascuna.                                   *
+      ; * Che cosa fa il codice: scarta i codici tastiera da           *
+      ; * KBD_NO_KEY in su e legge la matrice con le tabelle .KBD_ROW  *
+      ; * e .KBD_COLUMN, che hanno 8 voci ciascuna.                    *
       ; *                                                              *
       ; * Che cosa succede davvero: con __C128_C64_MODE = 1 KBD_NO_KEY *
       ; * vale $58, quindi i codici extra del C128 da $40 a $57        *
@@ -225,17 +225,17 @@
       ; * Fonte: segnalazione dell'utente, 2026-11-06.                 *
       ; ****************************************************************
 
-      cmp #KBD_NO_KEY             ; Il keycode è valido?
+      cmp #KBD_NO_KEY             ; Il codice tastiera è valido?
       bcs .Exit_KEYSCAN_Bad_Keycode
 
-      pha                         ; Salva il keycode.
+      pha                         ; Salva il codice tastiera.
       tya
       pha                         ; Salva .Y.
       txa
       pha                         ; Salva .X.
 
       tsx                         ; .X punta alla cima dello stack.
-      lda STACK+3,x               ; Riprende il keycode.
+      lda STACK+3,x               ; Riprende il codice tastiera.
       lsr a                       ; Il codice diviso 8 indica la riga da selezionare.
       lsr a
       lsr a
@@ -243,7 +243,7 @@
 
       lda .KBD_ROW,y
       sta CIAPRA
-      lda STACK+3,x               ; Riprende il keycode.
+      lda STACK+3,x               ; Riprende il codice tastiera.
       and #%00000111              ; I 3 bit meno significativi indicano
       tay                         ; la colonna da scansionare.
 
@@ -279,7 +279,7 @@
       bne .Exit_KEYSCAN
 
     .Exit_KEYSCAN_Bad_Keycode:
-      sec                         ; Keycode non valido: Carry = 1.
+      sec                         ; Codice tastiera non valido: Carry = 1.
       rts
 
     .Exit_KEYSCAN_False_Key:
@@ -287,7 +287,7 @@
       lda #%00000001              ; Falso tasto: Carry = 1.
 
     .Exit_KEYSCAN:
-      sta STACK+3,x               ; Salva i flag dell'esito al posto del keycode.
+      sta STACK+3,x               ; Salva i flag dell'esito al posto del codice tastiera.
 
       php
       pla                         ; .A = .P.
