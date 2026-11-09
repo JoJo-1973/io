@@ -74,6 +74,8 @@ Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15
 | Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`<br>Carry: 0 = messaggio letto; 1 = canale non aperto |
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 
+[↑ Torna al contenuto](#contenuto)
+
 <a id="utilita-decode_disk_status"></a>
 ### DECODE_DISK_STATUS
 
@@ -84,6 +86,8 @@ Decodifica il messaggio di stato già presente in `STACK` (scritto da `DISK_STAT
 | Input | `STACK` (fino a 40 byte): messaggio di stato terminato da `$00` |
 | Output | `.A`: codice dell'errore (`NN`; 0 = nessun errore)<br>`.X`: primo numero dopo il messaggio (`TT`)<br>`.Y`: secondo numero dopo il messaggio (`SS`)<br>Carry: 0 = messaggio decodificato; 1 = formato non valido |
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
 
 <a id="utilita-disk_directory"></a>
 ### DISK_DIRECTORY
@@ -101,6 +105,8 @@ In caso di errore dell'unità la subroutine va a capo, stampa il messaggio di st
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 | Richiede | `__USE_DISK_STATUS = 1` |
 
+[↑ Torna al contenuto](#contenuto)
+
 <a id="utilita-disk_command"></a>
 ### DISK_COMMAND
 
@@ -114,6 +120,8 @@ Se il canale comandi non si apre, il comando non parte e `STACK` non viene scrit
 | Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`, non scritto se il comando non è inviato<br>Carry: 0 = comando inviato; 1 = errore (comando vuoto o più lungo di 40 caratteri, canale non aperto o stato non letto) |
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 | Richiede | `__USE_DISK_STATUS = 1` |
+
+[↑ Torna al contenuto](#contenuto)
 
 <a id="modulo-keyboard_tools"></a>
 ## keyboard_tools.asm
@@ -134,6 +142,8 @@ Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'int
 | Input | `.A`: codice tastiera del tasto da scansionare<br>`__KBD_HISTORY` (1 byte, ZP): serie storica, da azzerare prima del primo uso |
 | Output | `__KBD_HISTORY`: serie storica aggiornata<br>Negative: 0 = tasto non premuto; 1 = tasto premuto (nuova pressione o tenuto). Indefinito se Carry = 1<br>Zero: 0 = nuova pressione; 1 = tasto non premuto o ancora tenuto. Indefinito se Carry = 1<br>Carry: 0 = lettura valida; 1 = falso tasto o codice tastiera non valido |
 | Registri Modificati | `.A`, `.P` (Negative, Zero, Carry), `CIAPRA`, `CIAPRB`, `__KBD_HISTORY` |
+
+[↑ Torna al contenuto](#contenuto)
 
 ### Note d'uso di keyboard_tools.asm
 
@@ -229,6 +239,8 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
   bmi .Loop_Poll_Release        ; REPEAT UNTIL: tasto non premuto
 ```
 
+[↑ Torna al contenuto](#contenuto)
+
 ## Limiti noti
 
 - `DISK_COMMAND` non è ancora stato provato con un'unità disco reale.
@@ -236,3 +248,5 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
 - `KEYSCAN` e il joystick nella porta 2: il controllo del falso tasto è costruito sul joystick nella porta 1. L'influenza del joystick nella porta 2, che si legge sulla porta usata per selezionare le righe, non è stata ancora verificata.
 - `KEYSCAN` controlla un tasto per volta e non distingue due tasti della stessa colonna ([Nota #02](#nota-keyboard_tools-02)).
 - `chars.asm` (conversione di caratteri tra codifiche) è in revisione e non è ancora nel formato delle altre librerie: non va usato.
+
+[↑ Torna al contenuto](#contenuto)
