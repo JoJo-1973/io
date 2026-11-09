@@ -307,7 +307,6 @@
       tay                         ; Ripristina .Y.
       plp                         ; Ripristina l'esito.
       rts
-      rts
 
     .KBD_ROW:
       !byte %11111110             ; Maschere di selezione della riga della matrice.
