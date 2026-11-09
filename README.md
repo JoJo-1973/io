@@ -8,12 +8,12 @@ Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti 
 
 | Modulo | Utilità | Descrizione |
 |---|---|---|
-| `disk_tools.asm` | `DISK_STATUS` | Legge lo stato dell'unità disco |
-| | `DECODE_DISK_STATUS` | Decodifica lo stato dell'unità disco |
-| | `DISK_DIRECTORY` | Stampa la directory del disco |
-| | `DISK_COMMAND` | Invia un comando all'unità disco |
-| `keyboard_tools.asm` | `KEYSCAN` | Scansiona un tasto della matrice della tastiera |
-| `chars.asm` | | In revisione, non ancora utilizzabile |
+| [`disk_tools.asm`](#modulo-disk_tools) | [`DISK_STATUS`](#utilita-disk_status) | Legge lo stato dell'unità disco |
+| | [`DECODE_DISK_STATUS`](#utilita-decode_disk_status) | Decodifica lo stato dell'unità disco |
+| | [`DISK_DIRECTORY`](#utilita-disk_directory) | Stampa la directory del disco |
+| | [`DISK_COMMAND`](#utilita-disk_command) | Invia un comando all'unità disco |
+| [`keyboard_tools.asm`](#modulo-keyboard_tools) | [`KEYSCAN`](#utilita-keyscan) | Scansiona un tasto della matrice della tastiera |
+| [`chars.asm`](#limiti-noti) | | In revisione, non ancora utilizzabile |
 
 ## Uso
 
@@ -52,6 +52,7 @@ Punti di personalizzazione usati dalla libreria, definiti anch'essi in `config.a
 | `__PUT_CHAR` | `DISK_DIRECTORY` | `$FFD2` (CHROUT) | Subroutine di stampa di un carattere |
 | `__KBD_HISTORY` | `KEYSCAN` | `$05` | Cella in ZP: serie storica di `KEYSCAN`, da azzerare prima del primo uso |
 
+<a id="modulo-disk_tools"></a>
 ## disk_tools.asm
 
 Utilità per la gestione delle unità disco. Tutte ricevono il numero dell'unità disco in `.A`.
@@ -62,6 +63,7 @@ Il flag di Carry dice se l'operazione è riuscita (0) o no (1), non se l'unità 
 
 Le subroutine aprono e chiudono da sé i file logici che usano: il file logico 15 (`DISK_STATUS`) e il file logico 88 (`DISK_DIRECTORY` e `DISK_COMMAND`).
 
+<a id="utilita-disk_status"></a>
 ### DISK_STATUS
 
 Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15, indirizzo secondario 15) e lo scrive in `STACK`, terminato da `$00` al posto del ritorno a capo che lo chiude. Se il canale non si apre, `STACK` non viene scritto.
@@ -72,6 +74,7 @@ Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15
 | Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`<br>Carry: 0 = messaggio letto; 1 = canale non aperto |
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 
+<a id="utilita-decode_disk_status"></a>
 ### DECODE_DISK_STATUS
 
 Decodifica il messaggio di stato già presente in `STACK` (scritto da `DISK_STATUS`) e restituisce in binario, da 0 a 99, i tre numeri che contiene. Non legge dall'unità disco e non altera il messaggio. Il controllo del formato è minimo: la decodifica si ferma al primo carattere diverso da quello previsto, e in quel caso `.A`, `.X` e `.Y` sono indefiniti.
@@ -82,6 +85,7 @@ Decodifica il messaggio di stato già presente in `STACK` (scritto da `DISK_STAT
 | Output | `.A`: codice dell'errore (`NN`; 0 = nessun errore)<br>`.X`: primo numero dopo il messaggio (`TT`)<br>`.Y`: secondo numero dopo il messaggio (`SS`)<br>Carry: 0 = messaggio decodificato; 1 = formato non valido |
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
 
+<a id="utilita-disk_directory"></a>
 ### DISK_DIRECTORY
 
 Stampa la directory del disco, una voce per linea: la lunghezza in blocchi, uno spazio e il nome. I caratteri si stampano con `__PUT_CHAR`.
@@ -97,6 +101,7 @@ In caso di errore dell'unità la subroutine va a capo, stampa il messaggio di st
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 | Richiede | `__USE_DISK_STATUS = 1` |
 
+<a id="utilita-disk_command"></a>
 ### DISK_COMMAND
 
 Invia un comando DOS all'unità disco e ne legge la risposta con `DISK_STATUS`. Il comando è una stringa terminata da `$00` puntata da `INDEX`: non può essere vuoto né superare i 40 caratteri (il DOS dell'unità tronca un comando più lungo, con risultati imprevedibili). Un comando non valido non viene inviato e la subroutine esce con il Carry a 1.
@@ -110,15 +115,17 @@ Se il canale comandi non si apre, il comando non parte e `STACK` non viene scrit
 | Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
 | Richiede | `__USE_DISK_STATUS = 1` |
 
+<a id="modulo-keyboard_tools"></a>
 ## keyboard_tools.asm
 
 Lettura diretta della tastiera dalla matrice del CIA #1, senza passare dal Kernal. Deriva da quella del gioco Platoon, accorciata e con la serie storica integrata.
 
+<a id="utilita-keyscan"></a>
 ### KEYSCAN
 
 Verifica se un tasto, indicato dal suo codice tastiera, è stato appena premuto. Non cerca quale tasto sia premuto: il codice tastiera è un dato in ingresso ([Nota #01](#nota-keyboard_tools-01)). Il codice tastiera è la posizione del tasto nella matrice, cioè la riga per 8 più la colonna (simboli `KBD_*` di `c64/keyboard.asm`, da `$00` a `$3F`); un codice da `KBD_NO_KEY` in su non è valido.
 
-Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione dei suoi due porti abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): il chiamante la azzera prima del primo uso.
+Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione dei suoi due porti abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio. Il chiamante la azzera prima del primo uso.
 
 Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note da [Nota #03](#nota-keyboard_tools-03) a [Nota #05](#nota-keyboard_tools-05).
 
@@ -140,7 +147,7 @@ Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'int
 <a id="nota-keyboard_tools-02"></a>
 #### Nota #02
 
-La serie storica, la cella in pagina zero `__KBD_HISTORY`, è un solo byte, condiviso da tutti i tasti, e ricorda la sola colonna dell'ultima pressione, non la riga. Il chiamante la azzera prima del primo uso. Quindi si controlla un tasto per volta: se nello stesso passaggio si scansionano tasti diversi, le chiamate si disturbano a vicenda e `KEYSCAN` segnala una nuova pressione a ogni passaggio finché uno dei tasti resta premuto. Due tasti della stessa colonna, poi, non si distinguono tra loro.
+La serie storica, la cella in pagina zero `__KBD_HISTORY`, è un solo byte, condiviso da tutti i tasti: finché il tasto resta premuto contiene la sola colonna, non la riga, e al rilascio viene azzerata. Il chiamante la azzera prima del primo uso. Quindi si controlla un tasto per volta: se nello stesso passaggio si scansionano tasti diversi, le chiamate si disturbano a vicenda e `KEYSCAN` segnala una nuova pressione a ogni passaggio finché uno dei tasti resta premuto. Due tasti della stessa colonna, poi, non si distinguono tra loro.
 
 <a id="nota-keyboard_tools-03"></a>
 #### Nota #03
@@ -224,6 +231,7 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
 
 ## Limiti noti
 
+- `DISK_COMMAND` non è ancora stato provato con un'unità disco reale.
 - `KEYSCAN` con `__C128_C64_MODE = 1`: `KBD_NO_KEY` vale `$58`, quindi i codici extra del C128 da `$40` a `$57` superano il controllo di validità e la lettura della matrice non ha senso. I tasti extra del C128 si leggono da altre porte e richiedono un ramo dedicato, non ancora scritto.
 - `KEYSCAN` e il joystick nella porta 2: il controllo del falso tasto è costruito sul joystick nella porta 1. L'influenza del joystick nella porta 2, che si legge sulla porta usata per selezionare le righe, non è stata ancora verificata.
 - `KEYSCAN` controlla un tasto per volta e non distingue due tasti della stessa colonna ([Nota #02](#nota-keyboard_tools-02)).
