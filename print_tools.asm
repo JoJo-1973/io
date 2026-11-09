@@ -271,7 +271,7 @@
 
     PRINT_MSG:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.          *
       ; *                                                              *
       ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .X sia invariato. CHROUT lo preserva, ma una        *
@@ -406,7 +406,7 @@
       ; * PRINT_NTH dipende dalla stessa condizione in modo indiretto: *
       ; * dopo jsr PRINT_MSG ripristina il puntatore con sta 1,x e sta *
       ; * 0,x e quindi si aspetta .X invariato, cosa che PRINT_MSG     *
-      ; * garantisce solo se __PUT_CHAR preserva .X.                    *
+      ; * garantisce solo se __PUT_CHAR preserva .X.                   *
       ; *                                                              *
       ; * Si risolve correggendo PRINT_MSG.                            *
       ; ****************************************************************
@@ -509,7 +509,7 @@
 
     PRINT_RAW:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.          *
       ; *                                                              *
       ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .Y sia invariato. CHROUT lo preserva, ma una        *
@@ -572,7 +572,7 @@
 
     PRINT_IMM:
       ; ****************************************************************
-      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.           *
+      ; * TO-DO: B15 - dipendenza dai registri di __PUT_CHAR.          *
       ; *                                                              *
       ; * Dopo ogni jsr __PUT_CHAR la subroutine si aspetta che il     *
       ; * registro .Y sia invariato. CHROUT lo preserva, ma una        *
