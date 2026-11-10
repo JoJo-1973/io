@@ -393,45 +393,7 @@ ASC2SCR:
   !byte   0, 27,127, 29, 30,100,109,115, 93,107, 64,102
 .ASC2SCR_SPECIALS_END:
 
-!zone Ecm2Scr
-; Titolo:                 ROUTINE: Conversione da codifica Codice Schermo ECM a Codice Schermo
-; Nome:                   ECM2SCR
-; Descrizione:            La macro trasforma il codice carattere dalla codifica Codice Schermo ECM a quella Codice Schermo.
-;
-;                         In modalità ECM i codici schermo 64-127, 128-191 e 192-255 duplicano i codici 0-63
-;                         ma con un colore di sfondo che dipende dal contenuto dei registri colore BGCOL0-3.
-;                         La decodifica si rende utile quando si è interessati solamente alla rappresentazione
-;                         grafica del carattere tralasciando l'informazione del colore di sfondo.
-;
-; Parametri di ingresso:  .A:   Codice carattere in codifica Codice Schermo ECM
-; Parametri di uscita:    .A:   Codice carattere in codifica Codice Schermo
-;                         .X:   Codice carattere in codifica Codice Schermo ECM
-; Alterazioni registri:   .A, .X
-; Alterazioni pag. zero:  ---
-; Dipendenze esterne:     ---
-ECM2SCR:
-  tax                           ; Salva una copia del codice originario in .X
-  and #%00111111                ; ed azzera i bit 7 e 6
-  rts
 
-!zone Scr2Ecm
-; Titolo:                 ROUTINE: Conversione da codifica Codice Schermo a Codice Schermo ECM
-; Nome:                   SCR2ECM
-; Descrizione:            La macro trasforma il codice carattere dalla codifica Codice Schermo a quella Codice Schermo ECM.
-;
-;                         In modalità ECM i codici schermo 64-127, 128-191 e 192-255 duplicano i codici 0-63
-;                         ma con un colore di sfondo che dipende dal contenuto dei registri colore BGCOL0-3.
-;                         La decodifica non è necessaria in quanto viene effettuata a livello hardware.
-;
-; Parametri di ingresso:  .A:   Codice carattere in codifica Codice Schermo
-; Parametri di uscita:    .A:   Codice carattere in codifica Codice Schermo ECM
-;                         .X:   Codice carattere in codifica Codice Schermo
-; Alterazioni registri:   .A, .X
-; Alterazioni pag. zero:  ---
-; Dipendenze esterne:     ---
-SCR2ECM:
-  tax
-  rts
 
 !zone Pet2Asc
 ; Titolo:                 ROUTINE: Conversione da codifica PETSCII ad ASCII (7 bit)

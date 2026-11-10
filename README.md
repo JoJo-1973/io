@@ -69,7 +69,7 @@ Le subroutine aprono e chiudono da sé i file logici che usano: il file logico 1
 
 Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15, indirizzo secondario 15) e lo scrive in `STACK`, terminato da `$00` al posto del ritorno a capo che lo chiude. Se il canale non si apre, `STACK` non viene scritto.
 
-| | |
+| Voce | Contenuto |
 |---|---|
 | Input | `.A`: numero dell'unità disco |
 | Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`<br>Carry: 0 = messaggio letto; 1 = canale non aperto |
@@ -82,7 +82,7 @@ Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15
 
 Decodifica il messaggio di stato già presente in `STACK` (scritto da `DISK_STATUS`) e restituisce in binario, da 0 a 99, i tre numeri che contiene. Non legge dall'unità disco e non altera il messaggio. Il controllo del formato è minimo: la decodifica si ferma al primo carattere diverso da quello previsto, e in quel caso `.A`, `.X` e `.Y` sono indefiniti.
 
-| | |
+| Voce | Contenuto |
 |---|---|
 | Input | `STACK` (fino a 40 byte): messaggio di stato terminato da `$00` |
 | Output | `.A`: codice dell'errore (`NN`; 0 = nessun errore)<br>`.X`: primo numero dopo il messaggio (`TT`)<br>`.Y`: secondo numero dopo il messaggio (`SS`)<br>Carry: 0 = messaggio decodificato; 1 = formato non valido |
@@ -99,7 +99,7 @@ I file da elencare si scelgono con un pattern, una stringa terminata da `$00` pu
 
 In caso di errore dell'unità la subroutine va a capo, stampa il messaggio di stato (letto con `DISK_STATUS`) ed esce con il Carry a 1. La stampa dei numeri e del messaggio usa LINPRT e STROUT del BASIC, che alterano proprie celle di lavoro (tra cui FAC): il loro contenuto non è garantito dopo la chiamata.
 
-| | |
+| Voce | Contenuto |
 |---|---|
 | Input | `.A`: numero dell'unità disco<br>`INDEX` (2 byte, ZP): puntatore al pattern, terminato da `$00` |
 | Output | Carry: 0 = directory stampata; 1 = pattern errato, canale non aperto o errore dell'unità |
@@ -115,7 +115,7 @@ Invia un comando DOS all'unità disco e ne legge la risposta con `DISK_STATUS`. 
 
 Se il canale comandi non si apre, il comando non parte e `STACK` non viene scritto. Se invece non si riesce a leggere lo stato, il comando è comunque partito, ma il Carry vale 1 e `STACK` non viene scritto.
 
-| | |
+| Voce | Contenuto |
 |---|---|
 | Input | `.A`: numero dell'unità disco<br>`INDEX` (2 byte, ZP): puntatore al comando, terminato da `$00` |
 | Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`, non scritto se il comando non è inviato<br>Carry: 0 = comando inviato; 1 = errore (comando vuoto o più lungo di 40 caratteri, canale non aperto o stato non letto) |
@@ -138,7 +138,7 @@ Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzion
 
 Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note [Nota #03](#nota-keyboard_tools-03), [Nota #04](#nota-keyboard_tools-04) e [Nota #05](#nota-keyboard_tools-05).
 
-| | |
+| Voce | Contenuto |
 |---|---|
 | Input | `.A`: codice tastiera del tasto da scansionare<br>`__KBD_HISTORY` (1 byte, ZP): serie storica, da azzerare prima del primo uso |
 | Output | `__KBD_HISTORY`: serie storica aggiornata<br>Negative: 0 = tasto non premuto; 1 = tasto premuto (nuova pressione o tenuto). Indefinito se Carry = 1<br>Zero: 0 = nuova pressione; 1 = tasto non premuto o ancora tenuto. Indefinito se Carry = 1<br>Carry: 0 = lettura valida; 1 = falso tasto o codice tastiera non valido |
