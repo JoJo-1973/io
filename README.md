@@ -29,10 +29,10 @@ La cartella `io` sta nella cartella delle librerie di C64Studio, accanto alle al
 
 I moduli non includono altri file: i simboli che usano arrivano dai file di simboli che il programma include prima, nella parte dedicata ai simboli.
 
-| Modulo | File di simboli richiesti |
-|---|---|
-| `disk_tools.asm` | `<c64/kernal.asm>`, `<c64/symbols.asm>` |
-| `keyboard_tools.asm` | `<c64/keyboard.asm>`, `<c64/symbols.asm>`, `<chip/cia.asm>` |
+| Modulo | Include da sé | File da includere prima |
+|---|---|---|
+| `disk_tools.asm` | Nessuno | `<c64/kernal.asm>`, `<c64/symbols.asm>` |
+| `keyboard_tools.asm` | Nessuno | `<c64/keyboard.asm>`, `<c64/symbols.asm>`, `<chip/cia.asm>` |
 
 ### Configurazione
 
@@ -128,6 +128,8 @@ Se il canale comandi non si apre, il comando non parte e `STACK` non viene scrit
 ## keyboard_tools.asm
 
 Lettura diretta della tastiera dalla matrice del CIA #1, senza passare dal Kernal. Deriva da quella del gioco Platoon, accorciata e con la serie storica integrata.
+
+Requisiti di pagina zero: `__KBD_HISTORY`.
 
 <a id="utilita-keyscan"></a>
 ### KEYSCAN
