@@ -595,7 +595,7 @@
       +m_Inc16 INDEX2               ; Recupera la riga alla quale posizionare il cursore.
 
       lda (INDEX2),y
-      cmp #$FF                      ; E' il marcatore di "posizione attuale"?
+      cmp #$FF                      ; È il marcatore di "posizione attuale"?
       bne .Else_Coord               ; No, estrai le coordinate
 
       +m_Inc16 INDEX2               ; altrimenti scarta il byte successivo.
@@ -754,14 +754,14 @@
                                     ; __PUT_CHAR concatenando questa macro con altro codice.
 
     .NORM_TABLE:
-      !byte %00000000               ; 0-31    > 0-31    %000 > %000
-      !byte %00100000               ; 32-63   > 32-63   %001 > %001
-      !byte %01000000               ; 64-95   > 64-95   %010 > %010
-      !byte %01000000               ; 96-127  > 64-95   %011 > %010
-      !byte %10000000               ; 128-159 > 128-159 %100 > %100
-      !byte %00100000               ; 160-191 > 32-63   %101 > %001
-      !byte %01000000               ; 192-223 > 64-95   %110 > %010
-      !byte %00100000               ; 224-255 > 32-63   %111 > %001
+      !byte %00000000               ; 0-31    > 0-31      %000 > %000
+      !byte %00100000               ; 32-63   > 32-63     %001 > %001
+      !byte %01000000               ; 64-95   > 64-95     %010 > %010
+      !byte %01000000               ; 96-127  > 64-95     %011 > %010
+      !byte %10000000               ; 128-159 > 128-159   %100 > %100
+      !byte %00100000               ; 160-191 > 32-63     %101 > %001
+      !byte %01000000               ; 192-223 > 64-95     %110 > %010
+      !byte %00100000               ; 224-255 > 32-63     %111 > %001
 
     ._TEMPA:
       !byte 0
