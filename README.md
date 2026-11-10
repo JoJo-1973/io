@@ -4,6 +4,7 @@ Utilità di input/output per il Commodore 64: gestione delle unità disco e lett
 
 Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti d'interfaccia nelle intestazioni delle subroutine.
 
+<a id="contenuto"></a>
 ## Contenuto
 
 | Modulo | Utilità | Descrizione |
@@ -135,7 +136,7 @@ Verifica se un tasto, indicato dal suo codice tastiera, è stato appena premuto.
 
 Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione dei suoi due porti abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio. Il chiamante la azzera prima del primo uso.
 
-Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note da [Nota #03](#nota-keyboard_tools-03) a [Nota #05](#nota-keyboard_tools-05).
+Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note [Nota #03](#nota-keyboard_tools-03), [Nota #04](#nota-keyboard_tools-04) e [Nota #05](#nota-keyboard_tools-05).
 
 | | |
 |---|---|
@@ -145,7 +146,7 @@ Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'int
 
 [↑ Torna al contenuto](#contenuto)
 
-### Note d'uso di keyboard_tools.asm
+### Note d'uso di `keyboard_tools.asm`
 
 <a id="nota-keyboard_tools-01"></a>
 #### Nota #01
@@ -241,6 +242,7 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
 
 [↑ Torna al contenuto](#contenuto)
 
+<a id="limiti-noti"></a>
 ## Limiti noti
 
 - `DISK_COMMAND` non è ancora stato provato con un'unità disco reale.
