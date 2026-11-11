@@ -120,7 +120,7 @@
 ; ------------------------------------------------------------------------------
 ; Descrizione:  Scrive un carattere sullo schermo alla riga e colonna
 ;               specificate e supporta in modo trasparente il modo Colore di
-;               Sfondo Esteso. Se questo modo è attivo il codice schermo del
+;               Sfondo Esteso. Se questo modo è attivo il codice Schermo del
 ;               carattere è automaticamente riportato all'intervallo 0-63 e
 ;               viene scritto utilizzando il registro colore che è codificato
 ;               in __BG_COL:
@@ -131,7 +131,7 @@
 ;               Richiede __USE_COMPUTE_CELL_ADDRESS = 1.
 ;
 ; Input:
-;   - .A (1 byte, CPU)      : Codice schermo del carattere
+;   - .A (1 byte, CPU)      : Codice Schermo del carattere
 ;   - .X (1 byte, CPU)      : Colonna della cella (0-39)
 ;   - .Y (1 byte, CPU)      : Riga della cella (0-24)
 ;   - __BG_COL (1 byte, ZP) : Selettore del registro di sfondo (0-3),
@@ -166,7 +166,7 @@
       and #%11000000
       sta ._ECM_MASK
 
-      lda ._TEMPA                   ; Riprendi il codice schermo dalla cella temporanea
+      lda ._TEMPA                   ; Riprendi il codice Schermo dalla cella temporanea
       and #%00111111                ; cancella i 2 bit più significativi
       ora ._ECM_MASK                ; ed applica i bit di selezione del registro di colore.
       sta ._TEMPA
@@ -174,7 +174,7 @@
     .Write_Char:
       lda HIBASE                    ; Calcola la cella indicata da .X e .Y
       jsr COMPUTE_CELL_ADDRESS      ; a partire dalla base della memoria schermo,
-      lda ._TEMPA                   ; poi recupera il valore del codice schermo
+      lda ._TEMPA                   ; poi recupera il valore del codice Schermo
       ldy #0                        ; e scrivilo in memoria alla posizione calcolata.
       sta (INDEX2),y
       +m_Pull_AXY
@@ -684,7 +684,7 @@
 
     .Check_Invalid:
       cpx #$00                      ; Se il codice PETSCII è 0, esci senza stampare.
-      beq .Exit_PUT_ECM_CHAR
+      beq .Exit_M_PUT_ECM_CHAR
 
       cpx #$05                      ; Se non è un codice PETSCII di cambio del colore di
       bcs .Else_If_Control          ; sfondo (1-4) passa oltre, altrimenti convertilo in 0-3,
@@ -692,11 +692,11 @@
 
       dex
       stx __BG_COL
-      jmp .Exit_PUT_ECM_CHAR
+      jmp .Exit_M_PUT_ECM_CHAR
 
     .Else_If_Control:
       cmp #$12                      ; Se il codice PETSCII è {RVS} oppure {OFF},
-      beq .Exit_PUT_ECM_CHAR        ; esci senza stampare.
+      beq .Exit_M_PUT_ECM_CHAR      ; esci senza stampare.
 
       cmp #$20                      ; Se il codice PETSCII è un rimanente codice di
       bcc .Output                   ; controllo stampalo ed esci.
@@ -744,7 +744,7 @@
       txa
       jsr CHROUT
 
-    .Exit_PUT_ECM_CHAR:
+    .Exit_M_PUT_ECM_CHAR:
       lda ._TEMPA                   ; Ripristina il contenuto dei registri.
       ldx ._TEMPX
       ldy ._TEMPY
