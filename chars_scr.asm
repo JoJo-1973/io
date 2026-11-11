@@ -189,12 +189,9 @@
 ;               da 65 a 90 le maiuscole, da 32 a 63 gli stessi caratteri che ha
 ;               ASCII con quei codici.
 ;
-;               I caratteri ASCII che il Commodore non ha sono rappresentati da
-;               caratteri grafici che somigliano all'originale e che sono uguali
-;               nel set #1 e nel set #2, in modo che la conversione non dipenda
-;               da un set di caratteri personalizzato. La routine li riconverte
-;               nel carattere ASCII che sostituiscono: per esempio il 93 diventa
-;               124, la barra verticale.
+;               I caratteri ASCII che il Commodore non ha sono sostituiti da
+;               caratteri grafici: la routine li riconverte nel carattere ASCII
+;               che sostituiscono (vedi [NOTA #03 in <io/chars.asm>]).
 ;
 ;               Gli altri codici, cioè i caratteri inversi e i grafici che non
 ;               somigliano a nessun carattere ASCII, non hanno equivalente: il

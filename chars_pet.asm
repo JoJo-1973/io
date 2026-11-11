@@ -178,12 +178,11 @@
 ;               set di caratteri #2: le lettere minuscole stanno in 65-90 di
 ;               PETSCII (e in 1-26 di Codice Schermo) e le maiuscole in 193-218.
 ;
-;               I caratteri ASCII che il Commodore non ha sono rappresentati da
-;               caratteri grafici che somigliano all'originale e che sono uguali
-;               nel set #1 e nel set #2, e la routine li riconverte nel
-;               carattere ASCII che sostituiscono: per esempio il 125 diventa
-;               124, la barra verticale. I codici duplicati di PETSCII (da 96 a
-;               127 e da 192 a 223, da 160 a 191 e da 224 a 255) danno lo stesso
+;               I caratteri ASCII che il Commodore non ha sono sostituiti da
+;               caratteri grafici: la routine li riconverte nel carattere ASCII
+;               che sostituiscono (vedi [NOTA #03 in <io/chars.asm>]). I codici
+;               duplicati di PETSCII (da 96 a 127 e da 192 a 223, da 160 a 191 e
+;               da 224 a 255) danno lo stesso risultato.
 ;               risultato.
 ;
 ;               I codici di controllo da 0 a 31 sono trattati come i caratteri

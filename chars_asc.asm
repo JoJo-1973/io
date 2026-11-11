@@ -24,11 +24,8 @@
 ;               maiuscole (i codici da 65 a 90 di Codice Schermo), da 97 a 122
 ;               le minuscole (da 1 a 26), da 32 a 63 gli stessi caratteri.
 ;
-;               I caratteri ASCII che il Commodore non ha sono rappresentati da
-;               caratteri grafici che somigliano all'originale e che sono uguali
-;               nel set #1 e nel set #2, in modo che la conversione non dipenda
-;               da un set di caratteri personalizzato: per esempio la barra
-;               verticale (124) diventa il codice 93.
+;               I caratteri ASCII che il Commodore non ha sono sostituiti da
+;               caratteri grafici: vedi [NOTA #03 in <io/chars.asm>].
 ;
 ;               I codici di controllo ASCII (da 0 a 31) e il DEL (127) non hanno
 ;               un glifo: i controlli diventano il glifo inverso del carattere
@@ -208,13 +205,11 @@
 ;               i codici da 193 a 218 e le minuscole (da 97 a 122) i codici da
 ;               65 a 90.
 ;
-;               I caratteri ASCII che il Commodore non ha sono rappresentati da
-;               caratteri grafici che somigliano all'originale e che sono uguali
-;               nel set #1 e nel set #2: per esempio la barra verticale (124)
-;               diventa il codice 221. Tra i codici duplicati di PETSCII la
-;               routine produce sempre quelli dei blocchi originali (da 160 a
-;               191 e da 192 a 223), mai i duplicati (da 96 a 127 e da 224 a
-;               255).
+;               I caratteri ASCII che il Commodore non ha sono sostituiti da
+;               caratteri grafici: vedi [NOTA #03 in <io/chars.asm>]. Tra i
+;               codici duplicati di PETSCII la routine produce sempre quelli dei
+;               blocchi originali (da 160 a 191 e da 192 a 223), mai i duplicati
+;               (da 96 a 127 e da 224 a 255).
 ;
 ;               I codici di controllo ASCII (da 0 a 31) diventano i glifi che
 ;               Codice Schermo ha con lo stesso codice (i codici da 64 a 95 in
@@ -410,11 +405,11 @@
 ;
 ;               Il colore di sfondo segue le regole di PET_ECM: BGCOL0 per i
 ;               codici da 32 a 63, per le lettere minuscole e per @, [, ] e ^;
-;               BGCOL1 per le lettere maiuscole e per i grafici che
-;               sostituiscono i caratteri ASCII che il Commodore non ha (\, _,
-;               `, {, |, }, ~ e il DEL); BGCOL2 per i codici di controllo da 0 a
-;               31, che hanno il glifo inverso del carattere con lo stesso
-;               codice di Codice Schermo.
+;               BGCOL1 per le lettere maiuscole, per i grafici che sostituiscono
+;               i caratteri ASCII che il Commodore non ha, tranne ^ (vedi [NOTA
+;               #03 in <io/chars.asm>]), e per il DEL; BGCOL2 per i codici di
+;               controllo da 0 a 31, che hanno il glifo inverso del carattere
+;               con lo stesso codice di Codice Schermo.
 ;
 ;               I codici da 128 a 255, che non sono ASCII a 7 bit, non hanno
 ;               equivalente: la conversione è impossibile, con il Carry a 1 e .A

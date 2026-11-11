@@ -324,11 +324,11 @@
 ;
 ;               Valgono le regole di SCR_ASC: i glifi con BGCOL0 e BGCOL1 si
 ;               convertono nel carattere ASCII che ha lo stesso aspetto, anche
-;               con le sostituzioni di glifo. BGCOL2 e BGCOL3 sono i caratteri
-;               inversi, che ASCII non ha: la conversione è impossibile, come
-;               per i grafici che non somigliano a nessun carattere ASCII. In
-;               quel caso il Carry è a 1 e .A vale $FF, che non è un codice
-;               ASCII valido.
+;               con le sostituzioni di glifo (vedi [NOTA #03 in
+;               <io/chars.asm>]). BGCOL2 e BGCOL3 sono i caratteri inversi, che
+;               ASCII non ha: la conversione è impossibile, come per i grafici
+;               che non somigliano a nessun carattere ASCII. In quel caso il
+;               Carry è a 1 e .A vale $FF, che non è un codice ASCII valido.
 ;
 ; Input:
 ;   - .A (1 byte, CPU)       : Codice del glifo in codifica ECM (da 0 a 63)
