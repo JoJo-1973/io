@@ -30,7 +30,7 @@
 ;
 ;               I codici di controllo (da 0 a 31 e da 128 a 159) non hanno un
 ;               equivalente in Codice Schermo. Si restituisce il glifo che
-;               mostrano in modalità virgolette, cioè il carattere inverso
+;               mostrano in modo Virgolette, cioè il carattere inverso
 ;               (da 128 a 159 e da 192 a 223), e la conversione è perfetta.
 ;               Per distinguere i codici di controllo si usa PET_SCR_C.
 ;
@@ -187,8 +187,8 @@
 ;
 ;               I codici di controllo da 0 a 31 sono trattati come i caratteri
 ;               di Codice Schermo con lo stesso codice: ASCII ha il glifo
-;               corrispondente, ma PETSCII lo mostra inverso in modalità
-;               virgolette. Il Carry è quindi a 1 e il carattere in .A va
+;               corrispondente, ma PETSCII lo mostra inverso in modo
+;               Virgolette. Il Carry è quindi a 1 e il carattere in .A va
 ;               stampato in modalità inversa. Non hanno equivalente, con il
 ;               Carry a 1 e .A = $FF (non è un codice ASCII valido), i codici da
 ;               128 a 159, i grafici che non somigliano a nessun carattere ASCII
@@ -440,8 +440,8 @@
 ;               160 a 255 (i caratteri ottenuti con SHIFT e i loro duplicati),
 ;               BGCOL2 per i codici di controllo da 0 a 31 e BGCOL3 per quelli
 ;               da 128 a 159, che il Kernal mostra come caratteri inversi in
-;               modalità virgolette. Il glifo è dato dai sei bit meno
-;               significativi del codice schermo: in ECM i grafici non esistono,
+;               modo Virgolette. Il glifo è dato dai sei bit meno
+;               significativi del codice Schermo: in ECM i grafici non esistono,
 ;               e i codici da 160 a 191 e da 224 a 255 hanno i glifi da 32 a 63.
 ;
 ;               Il pigreco ha due codici, 126 e 255, e ha il glifo 30 con

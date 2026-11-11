@@ -21,7 +21,7 @@
 ;               codifica Codice Schermo. In ingresso .A è il codice del glifo,
 ;               da 0 a 63, e __BG_COL il selettore del colore di sfondo, da 0 a
 ;               3: i due bit più significativi di .A e i sei più significativi
-;               di __BG_COL sono ignorati. Il codice schermo ha il glifo nei sei
+;               di __BG_COL sono ignorati. Il codice Schermo ha il glifo nei sei
 ;               bit meno significativi e il selettore nei due più significativi.
 ;               È la conversione inversa di SCR_ECM.
 ;
@@ -35,7 +35,7 @@
 ;
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica Codice Schermo
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : sempre 0
 ;
 ; Variazione Stack (.S):
@@ -56,8 +56,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
     .Exit_ECM_SCR:
       clc                         ; Nessuna informazione persa.
@@ -86,7 +86,7 @@
 ;
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica Codice Schermo
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : sempre 0
 ;
 ; Variazione Stack (.S):
@@ -107,8 +107,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
     .Exit_ECM_SCR_C:
       clc                         ; Nessuna informazione persa.
@@ -146,7 +146,7 @@
 ;
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica PETSCII
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : 0 = conversione perfetta; 1 = il carattere va
 ;                              stampato in modalità inversa
 ;
@@ -171,8 +171,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
       +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Exit_ECM_PET_Exception
 
@@ -225,7 +225,7 @@
 ;               codici da 32 a 95 e BGCOL1 i codici da 160 a 223.
 ;
 ;               I glifi da 0 a 31 con BGCOL2 e con BGCOL3 sono i caratteri
-;               inversi che in modalità virgolette rappresentano i codici di
+;               inversi che in modo Virgolette rappresentano i codici di
 ;               controllo da 0 a 31 e da 128 a 159, e diventano quei codici (il
 ;               pigreco con BGCOL3 diventa 158, il codice di YELLOW). I glifi da
 ;               32 a 63 con BGCOL2 e BGCOL3 diventano, come in ECM_PET, il
@@ -244,7 +244,7 @@
 ;
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica PETSCII
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : 0 = conversione perfetta; 1 = conversione
 ;                              imperfetta: .A è un codice di controllo o un
 ;                              carattere da stampare in modalità inversa
@@ -271,8 +271,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
       +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Exit_ECM_PET_C_Exception
 
@@ -337,7 +337,7 @@
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica ASCII a 7 bit
 ;                              ($FF se la conversione è impossibile)
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : 0 = conversione riuscita; 1 = conversione
 ;                              impossibile, con .A = $FF
 ;
@@ -362,8 +362,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
       +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Exit_ECM_ASC_Exception
 
@@ -455,7 +455,7 @@
 ; Output:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica ASCII a 7 bit
 ;                              ($FF se la conversione è impossibile)
-;   - .X (1 byte, CPU)       : Codice schermo equivalente (glifo e sfondo)
+;   - .X (1 byte, CPU)       : Codice Schermo equivalente (glifo e sfondo)
 ;   - Flag Carry (1 bit, .P) : 0 = conversione riuscita; 1 = conversione
 ;                              impossibile (.A = $FF) o codice di controllo
 ;                              (vedi la Descrizione)
@@ -481,8 +481,8 @@
       tay
 
       txa
-      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice schermo.
-      tax                         ; .X = codice schermo.
+      ora .BG_TABLE,y             ; Aggiunge i bit #7-#6 del codice Schermo.
+      tax                         ; .X = codice Schermo.
 
       +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Exit_ECM_ASC_C_Exception
 

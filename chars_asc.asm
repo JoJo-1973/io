@@ -401,7 +401,7 @@
 ;               controllo. La conversione separa le due informazioni: .A riceve
 ;               il codice del glifo, da 0 a 63, e il selettore del colore di
 ;               sfondo, da 0 a 3, va in __BG_COL. È il risultato di ASC_SCR
-;               seguita da SCR_ECM: le tabelle hanno i codici schermo.
+;               seguita da SCR_ECM: le tabelle hanno i codici Schermo.
 ;
 ;               Il colore di sfondo segue le regole di PET_ECM: BGCOL0 per i
 ;               codici da 32 a 63, per le lettere minuscole e per @, [, ] e ^;
@@ -447,7 +447,7 @@
       +m_Apply_Table .BLOCK_TABLE ; Codice regolare: sostituisce il blocco.
 
     .Split_Glyph_Background:
-      tay                         ; Salva il codice schermo in .Y.
+      tay                         ; Salva il codice Schermo in .Y.
       asl a                       ; Porta i bit #7-#6 nelle posizioni #1-#0
       rol a                       ; con tre rotazioni a sinistra
       rol a                       ; attraverso il Carry.
@@ -537,7 +537,7 @@
     .Check_Impossible:
       bmi .Exit_ASC_ECM_C_Impossible
 
-      tay                         ; Salva il codice schermo in .Y.
+      tay                         ; Salva il codice Schermo in .Y.
       asl a                       ; Porta i bit #7-#6 nelle posizioni #1-#0
       rol a                       ; con tre rotazioni a sinistra
       rol a                       ; attraverso il Carry.

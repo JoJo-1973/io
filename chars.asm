@@ -25,7 +25,7 @@
 ; codice, che dipende soltanto dalla codifica.
 ;
 ; I codici sono di due tipi: stampabili, che producono un glifo, e di
-; controllo, che eseguono un'azione. In modalità Virgolette e in modalità
+; controllo, che eseguono un'azione. In modo Virgolette e in modo
 ; Inserimento i codici di controllo perdono l'azione e mostrano un glifo.
 ;
 ; Le codifiche
@@ -40,7 +40,7 @@
 ;   a 255 gli stessi caratteri in modalità inversa.
 ;
 ; - PETSCII: la codifica del BASIC e del Kernal (funzioni ASC e CHR$). Ha i
-;   codici di controllo, e non ha i caratteri inversi: in modalità Virgolette
+;   codici di controllo, e non ha i caratteri inversi: in modo Virgolette
 ;   il Kernal mostra i controlli con un glifo inverso, senza ambiguità con i
 ;   glifi stampabili. Alcuni codici sono duplicati: il BASIC normalizza i
 ;   codici da 96 a 127 in quelli da 192 a 223 e i codici da 224 a 255 in

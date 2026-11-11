@@ -98,12 +98,12 @@
 ; Descrizione:  Converte un codice dalla codifica Codice Schermo alla codifica
 ;               PETSCII, producendo codici di controllo per i caratteri inversi
 ;               che li rappresentano. La conversione è "glifo per glifo", con i
-;               codici di controllo mostrati in modalità virgolette.
+;               codici di controllo mostrati in modo Virgolette.
 ;
 ;               I codici da 0 a 127 si convertono come in SCR_PET, compreso il
 ;               pigreco (94 diventa 255). I caratteri inversi da 128 a 159 e da
 ;               192 a 223 diventano i codici di controllo da 0 a 31 e da 128 a
-;               159, che in modalità virgolette si vedono con quel glifo
+;               159, che in modo Virgolette si vedono con quel glifo
 ;               inverso; il pigreco inverso (222) diventa quindi 158 (il codice
 ;               di YELLOW). L'alternativa, che è anche la scelta del Kernal
 ;               nella lettura dello schermo, sarebbe 255 con il Carry a 1, cioè
@@ -116,7 +116,7 @@
 ;               distinguono con un test su .A: se i bit #6 e #5 di .A sono
 ;               entrambi zero (and #%01100000 dà zero), .A è un codice di
 ;               controllo, che mostra il glifo inverso solo se viene stampato
-;               in modalità virgolette e fuori dalle virgolette esegue il
+;               in modo Virgolette e fuori dalle virgolette esegue il
 ;               controllo; altrimenti .A è un carattere stampabile, che va
 ;               stampato in modalità inversa. In ogni caso il bit #7 di .X
 ;               dice che il carattere originale era inverso.
