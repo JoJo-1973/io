@@ -647,12 +647,34 @@
 ;               altre istruzioni [NOTA #02]. Nello specifico questa macro
 ;               implementa la logica per stampare a schermo un carattere PETSCII
 ;               in modo ECM con il colore di sfondo desiderato. La macro si
-;               aspetta in .A il codice PETSCII del carattere da stampare:
-;               quattro codici PETSCII non utilizzati dal sistema operativo
-;               vengono reinterpretati come codici di controllo che, come gli
-;               altri, hanno effetto fino al loro cambiamento: essi sono
-;               ECM_BG[0-3] e selezionano il registro del VIC-II contenente il
-;               colore di sfondo da utilizzare [NOTA #03].
+;               aspetta in .A il codice PETSCII del carattere da stampare e
+;               restituisce .A, .X e .Y invariati.
+;
+;               I codici di controllo (0-31 e 128-159) sono trattati così: 0,
+;               18 ({RVS} ON) e 146 ({RVS} OFF) sono ignorati, perché il modo
+;               reverse è deciso da __BG_COL; quattro codici PETSCII non
+;               utilizzati dal sistema operativo (1-4) sono reinterpretati come
+;               codici di controllo che, come gli altri, hanno effetto fino al
+;               loro cambiamento: essi sono ECM_BG[0-3] e selezionano il
+;               registro del VIC-II contenente il colore di sfondo da
+;               utilizzare, senza stampare nulla [NOTA #03]; tutti gli altri
+;               sono inviati a CHROUT senza modifiche.
+;
+;               Gli altri codici PETSCII sono stampabili. Il codice è
+;               normalizzato, cioè portato nell'intervallo 32-95 in cui il modo
+;               ECM ha i suoi glifi, sostituendo i 3 bit più significativi
+;               secondo la tabella .NORM_TABLE (con la macro m_Apply_Table di
+;               <io/chars.asm>). Non è una transcodifica nel senso di
+;               <io/chars.asm>, che conserva il glifo: in modo ECM il VIC-II
+;               ignora i due bit più significativi del codice Schermo, quindi
+;               la normalizzazione dà il codice il cui glifo è quello che
+;               l'hardware mostrerebbe comunque. Per esempio il pigreco (255) è
+;               stampato come la freccia in su: il suo codice 255 diventa 94, e
+;               questo caso, che la tabella non copre, è trattato a parte con
+;               la macro m_Scan_Exceptions. Poi il bit #0 di __BG_COL è copiato
+;               nel bit #7 del codice normalizzato e il bit #1 di __BG_COL
+;               decide il modo reverse (RVS = 0 normale, 1 inverso); il codice
+;               è infine inviato a CHROUT. __BG_COL non cambia.
 ;
 ; Input:
 ;   - .A (1 byte, CPU)      : Codice PETSCII da stampare
@@ -660,7 +682,8 @@
 ;
 ; Output:
 ;   - __BG_COL (1 byte, ZP) : Nuovo selettore (se il codice è ECM_BG[0-3])
-;   - RVS (1 byte, ZP)      : Modo reverse (1 se __BG_COL > 1)
+;   - RVS (1 byte, ZP)      : Modo reverse (bit #1 di __BG_COL), se il codice è
+;                             stampabile
 ;
 ; Variazione Stack (.S):
 ;   - Stabile
@@ -668,80 +691,60 @@
 ; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BG_COL, RVS
 ; Dipendenze Esterne:   <c64/kernal.asm>
 ;                       <c64/symbols.asm>
-;                       <chip/vic_ii.asm>
+;                       <io/chars.asm>
 ;                       <system/branch.asm>
-;                       <system/standard.asm>
 ; ==============================================================================
 !macro m_Put_ECM_Char {
   !zone Put_ECM_Char
+
+    .TABLE_SIZE     = .EXCEPTIONS_END-.EXCEPTIONS
 
       sta ._TEMPA                   ; Preserva il contenuto dei registri.
       stx ._TEMPX
       sty ._TEMPY
 
-      tax                           ; Salva una copia del codice PETSCII originale
-      and #%01111111                ; ed azzera il bit più significativo.
+      tax                           ; Salva una copia del codice PETSCII originale.
+      and #%01100000                ; Se i bit #6 e #5 non sono entrambi a zero il codice
+      bne .Else_Printable           ; non è di controllo: passa alla stampa.
 
-    .Check_Invalid:
-      cpx #$00                      ; Se il codice PETSCII è 0, esci senza stampare.
+      txa                           ; Codice di controllo: se è 0 oppure {RVS} ON (18)
+      beq .Exit_M_PUT_ECM_CHAR      ; oppure {RVS} OFF (146) esci senza stampare.
+
+      cmp #$12
       beq .Exit_M_PUT_ECM_CHAR
 
-      cpx #$05                      ; Se non è un codice PETSCII di cambio del colore di
-      bcs .Else_If_Control          ; sfondo (1-4) passa oltre, altrimenti convertilo in 0-3,
-                                    ; salvalo in __BG_COL e finisci senza stampare.
+      cmp #$92
+      beq .Exit_M_PUT_ECM_CHAR
 
-      dex
-      stx __BG_COL
-      jmp .Exit_M_PUT_ECM_CHAR
+      cmp #$05                      ; Se non è un codice di cambio del colore di sfondo
+      bcs .Output                   ; (1-4) stampalo ed esci.
 
-    .Else_If_Control:
-      cmp #$12                      ; Se il codice PETSCII è {RVS} oppure {OFF},
-      beq .Exit_M_PUT_ECM_CHAR      ; esci senza stampare.
+      dex                           ; Altrimenti convertilo in 0-3,
+      stx __BG_COL                  ; salvalo in __BG_COL
+      jmp .Exit_M_PUT_ECM_CHAR      ; e finisci senza stampare.
 
-      cmp #$20                      ; Se il codice PETSCII è un rimanente codice di
-      bcc .Output                   ; controllo stampalo ed esci.
+    .Else_Printable:
+      txa                           ; Codice stampabile: recupera il codice originale.
 
-    .Convert:
-      cpx #$FF                      ; Il codice PETSCII 255 va trattato a parte:
-      bne .Else_Normalize
+      ; Se il codice è un'eccezione (255) .A contiene già il codice
+      ; normalizzato e la macro salta a .Apply_BGCOL.
+      +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Apply_BGCOL
 
-      lda #$5E                      ; il suo valore normalizzato è 94.
-      bne .Apply_BGCOL
-
-    .Else_Normalize:
-      txa                           ; Recupera il codice PETSCII originale.
-      lsr a                         ; Qualunque codice non intercettato in precedenza
-      lsr a                         ; viene normalizzato sostituendo i 3 bit più significativi
-      lsr a                         ; secondo le definizioni date dalla tabella .NORM_TABLE.
-      lsr a                         ; I 3 bit più significativi vengono trasformati in un indice
-      lsr a                         ; compreso tra 0 e 7.
-
-      tay                           ; Sposta l'indice in .Y,
-      txa                           ; recupera .A
-      and #%00011111                ; e sostituisci i 3 bit più significativi.
-      ora .NORM_TABLE,y
+      +m_Apply_Table .NORM_TABLE    ; Altrimenti sostituisce i 3 bit più significativi.
 
     .Apply_BGCOL:
-      tax                           ; Salva una copia di .A.
-      lda #0                        ; Disattiva la modalità reverse.
+      tax                           ; Salva il codice normalizzato.
+      lda __BG_COL                  ; Il bit #0 di __BG_COL va nel Carry e il bit #1
+      lsr a                         ; diventa il bit #0 di .A, cioè il modo reverse
+      and #%00000001                ; (0 = normale, 1 = inverso).
       sta RVS
 
-      lda __BG_COL                  ; Carica il registro colore in .A.
-      cmp #$02                      ; Se è > 1 allora attiva la modalità reverse.
-      bcc .No_Reverse
+      txa                           ; Recupera il codice normalizzato. Se il bit #0 di
+      bcc .Output                   ; __BG_COL è 0 stampalo così com'è, altrimenti
 
-      inc RVS
-
-    .No_Reverse:
-      and #%00000001                ; Se il registro colore è pari allora stampa il codice PETSCII
-      beq .Output
-
-      txa                           ; altrimenti setta il bit #7 prima di stamparlo.
-      ora #%10000000
-      +m_Skip1
+      ora #%10000000                ; setta il bit #7 prima di stamparlo.
 
     .Output:
-      txa
       jsr CHROUT
 
     .Exit_M_PUT_ECM_CHAR:
@@ -752,6 +755,11 @@
       +m_Bra .Skip_Table            ; Salta oltre la tabella dei dati al codice che segue la
                                     ; macro: in tal modo è possibile costruire una subroutine
                                     ; __PUT_CHAR concatenando questa macro con altro codice.
+
+    .EXCEPTIONS:
+      !byte $FF, $5E                ; 255 > 94 (in ECM il pigreco appare come freccia in su)
+
+    .EXCEPTIONS_END:
 
     .NORM_TABLE:
       !byte %00000000               ; 0-31    > 0-31      %000 > %000
