@@ -1,6 +1,6 @@
 # io
 
-Utilità di input/output per il Commodore 64: gestione delle unità disco e lettura diretta della tastiera. La libreria `io` fa parte della Libreria di Sistema (progetto `io.c64`) ed è scritta in assembly 6510 per C64Studio (sintassi ACME).
+Utilità di input/output per il Commodore 64: gestione delle unità disco, lettura diretta della tastiera e transcodifica dei caratteri tra le codifiche Codice Schermo, PETSCII, ASCII a 7 bit ed ECM. La libreria `io` fa parte della Libreria di Sistema (progetto `io.c64`) ed è scritta in assembly 6510 per C64Studio (sintassi ACME).
 
 Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti d'interfaccia nelle intestazioni delle subroutine.
 
@@ -14,7 +14,32 @@ Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti 
 | | [`DISK_DIRECTORY`](#utilita-disk_directory) | Stampa la directory del disco |
 | | [`DISK_COMMAND`](#utilita-disk_command) | Invia un comando all'unità disco |
 | [`keyboard_tools.asm`](#modulo-keyboard_tools) | [`KEYSCAN`](#utilita-keyscan) | Scansiona un tasto della matrice della tastiera |
-| [`chars.asm`](#limiti-noti) | | In revisione, non ancora utilizzabile |
+| [`chars.asm`](#modulo-chars) | [`m_Scan_Exceptions`](#utilita-m_scan_exceptions) | Cerca nella tabella delle eccezioni |
+| | [`m_Apply_Table`](#utilita-m_apply_table) | Sostituisce i 3 bit alti del codice |
+| | [`ASC_SCR`](#utilita-asc_scr) | Da ASCII a Codice Schermo, senza controlli |
+| | [`ASC_SCR_C`](#utilita-asc_scr_c) | Da ASCII a Codice Schermo, con controlli |
+| | [`ASC_PET`](#utilita-asc_pet) | Da ASCII a PETSCII, senza controlli |
+| | [`ASC_PET_C`](#utilita-asc_pet_c) | Da ASCII a PETSCII, con controlli |
+| | [`ASC_ECM`](#utilita-asc_ecm) | Da ASCII a ECM, senza controlli |
+| | [`ASC_ECM_C`](#utilita-asc_ecm_c) | Da ASCII a ECM, con controlli |
+| | [`ECM_SCR`](#utilita-ecm_scr) | Da ECM a Codice Schermo, senza controlli |
+| | [`ECM_SCR_C`](#utilita-ecm_scr_c) | Da ECM a Codice Schermo, con controlli |
+| | [`ECM_PET`](#utilita-ecm_pet) | Da ECM a PETSCII, senza controlli |
+| | [`ECM_PET_C`](#utilita-ecm_pet_c) | Da ECM a PETSCII, con controlli |
+| | [`ECM_ASC`](#utilita-ecm_asc) | Da ECM a ASCII, senza controlli |
+| | [`ECM_ASC_C`](#utilita-ecm_asc_c) | Da ECM a ASCII, con controlli |
+| | [`PET_SCR`](#utilita-pet_scr) | Da PETSCII a Codice Schermo, senza controlli |
+| | [`PET_SCR_C`](#utilita-pet_scr_c) | Da PETSCII a Codice Schermo, con controlli |
+| | [`PET_ASC`](#utilita-pet_asc) | Da PETSCII a ASCII, senza controlli |
+| | [`PET_ASC_C`](#utilita-pet_asc_c) | Da PETSCII a ASCII, con controlli |
+| | [`PET_ECM`](#utilita-pet_ecm) | Da PETSCII a ECM, senza controlli |
+| | [`PET_ECM_C`](#utilita-pet_ecm_c) | Da PETSCII a ECM, con controlli |
+| | [`SCR_PET`](#utilita-scr_pet) | Da Codice Schermo a PETSCII, senza controlli |
+| | [`SCR_PET_C`](#utilita-scr_pet_c) | Da Codice Schermo a PETSCII, con controlli |
+| | [`SCR_ASC`](#utilita-scr_asc) | Da Codice Schermo a ASCII, senza controlli |
+| | [`SCR_ASC_C`](#utilita-scr_asc_c) | Da Codice Schermo a ASCII, con controlli |
+| | [`SCR_ECM`](#utilita-scr_ecm) | Da Codice Schermo a ECM, senza controlli |
+| | [`SCR_ECM_C`](#utilita-scr_ecm_c) | Da Codice Schermo a ECM, con controlli |
 
 ## Uso
 
@@ -25,14 +50,16 @@ La cartella `io` sta nella cartella delle librerie di C64Studio, accanto alle al
 ```
 !source <io/disk_tools.asm>, once
 !source <io/keyboard_tools.asm>, once
+!source <io/chars.asm>, once
 ```
 
-I moduli non includono altri file: i simboli che usano arrivano dai file di simboli che il programma include prima, nella parte dedicata ai simboli.
+`disk_tools.asm` e `keyboard_tools.asm` non includono altri file: i simboli che usano arrivano dai file di simboli che il programma include prima, nella parte dedicata ai simboli. `chars.asm` è il modulo principale di un modulo spezzato e include da sé i suoi sotto-moduli (`chars_common.asm`, `chars_asc.asm`, `chars_ecm.asm`, `chars_pet.asm` e `chars_scr.asm`): il programma non li include direttamente.
 
 | Modulo | Include da sé | File da includere prima |
 |---|---|---|
 | `disk_tools.asm` | Nessuno | `<c64/kernal.asm>`, `<c64/symbols.asm>` |
 | `keyboard_tools.asm` | Nessuno | `<c64/keyboard.asm>`, `<c64/symbols.asm>`, `<chip/cia.asm>` |
+| `chars.asm` | `<io/chars_common.asm>`, `<io/chars_asc.asm>`, `<io/chars_ecm.asm>`, `<io/chars_pet.asm>`, `<io/chars_scr.asm>` | Nessuno |
 
 ### Configurazione
 
@@ -45,6 +72,30 @@ Ogni subroutine viene assemblata solo se il suo parametro vale `1` nella copia d
 | `__USE_DISK_DIRECTORY` | `DISK_DIRECTORY` | `__USE_DISK_STATUS` |
 | `__USE_DISK_COMMAND` | `DISK_COMMAND` | `__USE_DISK_STATUS` |
 | `__USE_KEYSCAN` | `KEYSCAN` | |
+| `__USE_ASC_SCR` | `ASC_SCR` | |
+| `__USE_ASC_SCR_C` | `ASC_SCR_C` | |
+| `__USE_ASC_PET` | `ASC_PET` | |
+| `__USE_ASC_PET_C` | `ASC_PET_C` | |
+| `__USE_ASC_ECM` | `ASC_ECM` | |
+| `__USE_ASC_ECM_C` | `ASC_ECM_C` | |
+| `__USE_ECM_SCR` | `ECM_SCR` | |
+| `__USE_ECM_SCR_C` | `ECM_SCR_C` | |
+| `__USE_ECM_PET` | `ECM_PET` | |
+| `__USE_ECM_PET_C` | `ECM_PET_C` | |
+| `__USE_ECM_ASC` | `ECM_ASC` | |
+| `__USE_ECM_ASC_C` | `ECM_ASC_C` | |
+| `__USE_PET_SCR` | `PET_SCR` | |
+| `__USE_PET_SCR_C` | `PET_SCR_C` | |
+| `__USE_PET_ASC` | `PET_ASC` | |
+| `__USE_PET_ASC_C` | `PET_ASC_C` | |
+| `__USE_PET_ECM` | `PET_ECM` | |
+| `__USE_PET_ECM_C` | `PET_ECM_C` | |
+| `__USE_SCR_PET` | `SCR_PET` | |
+| `__USE_SCR_PET_C` | `SCR_PET_C` | |
+| `__USE_SCR_ASC` | `SCR_ASC` | |
+| `__USE_SCR_ASC_C` | `SCR_ASC_C` | |
+| `__USE_SCR_ECM` | `SCR_ECM` | |
+| `__USE_SCR_ECM_C` | `SCR_ECM_C` | |
 
 Punti di personalizzazione usati dalla libreria, definiti anch'essi in `config.asm`:
 
@@ -52,6 +103,7 @@ Punti di personalizzazione usati dalla libreria, definiti anch'essi in `config.a
 |---|---|---|---|
 | `__PUT_CHAR` | `DISK_DIRECTORY` | `$FFD2` (CHROUT) | Subroutine di stampa di un carattere |
 | `__KBD_HISTORY` | `KEYSCAN` | `$05` | Cella in ZP: serie storica di `KEYSCAN`, da azzerare prima del primo uso |
+| `__BG_COL` | `ASC_ECM`, `ASC_ECM_C`, `ECM_SCR`, `ECM_SCR_C`, `ECM_PET`, `ECM_PET_C`, `ECM_ASC`, `ECM_ASC_C`, `PET_ECM`, `PET_ECM_C`, `SCR_ECM`, `SCR_ECM_C` | `$03` | Cella in ZP: selettore del colore di sfondo ECM (0-3) |
 
 <a id="modulo-disk_tools"></a>
 ## disk_tools.asm
@@ -244,6 +296,544 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
 
 [↑ Torna al contenuto](#contenuto)
 
+<a id="modulo-chars"></a>
+## chars.asm
+
+Transcodifica dei caratteri tra le codifiche Codice Schermo, PETSCII, ASCII a 7 bit ed ECM (modulo principale).
+
+Requisiti di pagina zero: `__BG_COL`.
+
+Note d'uso del modulo: [Nota #01](#nota-chars-01), [Nota #02](#nota-chars-02), [Nota #03](#nota-chars-03).
+
+### chars_common.asm
+
+Macro comuni alle routine di transcodifica dei caratteri (sotto-modulo di chars.asm): la ricerca di un codice nella tabella delle eccezioni e la sostituzione dei tre bit più significativi del codice con quelli della tabella dei blocchi.
+
+<a id="utilita-m_scan_exceptions"></a>
+#### m_Scan_Exceptions
+
+Chiamata: `+m_Scan_Exceptions .table_, .size_, .found_`
+
+Cerca il codice in `.A` nella tabella delle eccezioni. La tabella è formata da coppie di byte (codice sorgente, codice destinazione), una coppia per ogni eccezione, e la ricerca va dall'ultima coppia alla prima.
+
+Se trova il codice, carica in `.A` il codice di destinazione e salta a `.found_`, con `.Y` che contiene la posizione della coppia nella tabella (0 per la prima, 2 per la seconda, e così via). Se non lo trova, prosegue con l'istruzione che segue la macro, con `.A` invariato.
+
+La tabella non può essere vuota e può contenere al massimo 65 coppie (130 byte).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice sorgente da cercare<br>`.table_` (2 byte, Macro): Indirizzo della tabella delle eccezioni<br>`.size_` (1 byte, Macro): Dimensione della tabella in byte (2 per coppia), da 2 a 130<br>`.found_` (2 byte, Macro): Indirizzo a cui saltare se il codice è nella tabella |
+| Output | `.A` (1 byte, CPU): Codice destinazione se trovato, altrimenti invariato<br>`.Y` (1 byte, CPU): Posizione della coppia trovata. Indefinito se il codice non è nella tabella |
+| Registri Modificati | `.A`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-m_apply_table"></a>
+#### m_Apply_Table
+
+Chiamata: `+m_Apply_Table .table_`
+
+Sostituisce i tre bit più significativi del codice (il suo blocco, da 0 a 7) con quelli della tabella dei blocchi e lascia invariati i cinque bit meno significativi.
+
+La tabella ha 8 byte, uno per blocco: in ognuno contano solo i tre bit più significativi, e gli altri cinque devono essere zero.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice da convertire<br>`.X` (1 byte, CPU): Copia del codice da convertire<br>`.table_` (2 byte, Macro): Indirizzo della tabella dei blocchi |
+| Output | `.A` (1 byte, CPU): Codice convertito |
+| Registri Modificati | `.A`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+### chars_asc.asm
+
+Transcodifica dei caratteri dalla codifica ASCII a 7 bit alle altre codifiche (sotto-modulo di chars.asm).
+
+<a id="utilita-asc_scr"></a>
+#### ASC_SCR
+
+Converte un codice dalla codifica ASCII a 7 bit alla codifica Codice Schermo, senza produrre codici di controllo. La conversione è "glifo per glifo", con i codici ASCII letti come li mostra il set di caratteri #2: da 65 a 90 le lettere maiuscole (i codici da 65 a 90 di Codice Schermo), da 97 a 122 le minuscole (da 1 a 26), da 32 a 63 gli stessi caratteri.
+
+I caratteri ASCII che il Commodore non ha sono sostituiti da caratteri grafici: vedi [Nota #03 di `io/chars.asm`](#nota-chars-03).
+
+I codici di controllo ASCII (da 0 a 31) e il DEL (127) non hanno un glifo: i controlli diventano il glifo inverso del carattere con il codice più 64 (da 128 a 159), e il DEL il codice 102, che somiglia a una cancellazione. La conversione è perfetta: Codice Schermo ha i caratteri inversi.
+
+I codici da 128 a 255, che non sono ASCII a 7 bit, non hanno equivalente: la conversione è impossibile, con il Carry a 1 e `.A` = `$FF`. Nessun codice ASCII ha `$FF` come equivalente, e il Carry a 1 ha solo questo significato.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-asc_scr_c"></a>
+#### ASC_SCR_C
+
+Converte un codice dalla codifica ASCII a 7 bit alla codifica Codice Schermo, riconoscendo i codici di controllo. Come `ASC_SCR`, ma i codici di controllo ASCII (da 0 a 31 e il DEL, 127) non hanno un equivalente in Codice Schermo, che non ha codici di controllo: la conversione è impossibile.
+
+Sono impossibili allo stesso modo i codici da 128 a 255, che non sono ASCII a 7 bit. Il Carry a 0 dice che la conversione è riuscita, con la sostituzione del glifo quando serve. Il Carry a 1 dice che è impossibile, con `.A` = `$FF`: nessun codice ASCII ha `$FF` come equivalente.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-asc_pet"></a>
+#### ASC_PET
+
+Converte un codice dalla codifica ASCII a 7 bit alla codifica PETSCII, senza produrre codici di controllo. La conversione è "glifo per glifo", con i codici ASCII letti come li mostra il set di caratteri #2: le lettere maiuscole (da 65 a 90) diventano i codici da 193 a 218 e le minuscole (da 97 a 122) i codici da 65 a 90.
+
+I caratteri ASCII che il Commodore non ha sono sostituiti da caratteri grafici: vedi [Nota #03 di `io/chars.asm`](#nota-chars-03). Tra i codici duplicati di PETSCII la routine produce sempre quelli dei blocchi originali (da 160 a 191 e da 192 a 223), mai i duplicati (da 96 a 127 e da 224 a 255).
+
+I codici di controllo ASCII (da 0 a 31) diventano i glifi che Codice Schermo ha con lo stesso codice (i codici da 64 a 95 in PETSCII): il 28 diventa la sterlina e il 31 la freccia a sinistra: PETSCII non ha caratteri inversi, quindi il Carry è a 1 e il carattere va stampato in modalità inversa. Il DEL (127) diventa il codice 166, il glifo che somiglia a una cancellazione, con il Carry a 0.
+
+I codici da 128 a 255, che non sono ASCII a 7 bit, non hanno equivalente: la conversione è impossibile, con il Carry a 1 e `.A` = `$FF`. Il Carry a 1 ha dunque due significati, che si distinguono con un test su `.A`: se vale `$FF` la conversione è impossibile; altrimenti `.A` è un carattere da stampare in modalità inversa (il codice originale in `.X` è minore di 32).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o carattere da stampare in modalità inversa |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-asc_pet_c"></a>
+#### ASC_PET_C
+
+Converte un codice dalla codifica ASCII a 7 bit alla codifica PETSCII, riconoscendo i codici di controllo. Come `ASC_PET`, ma i codici di controllo ASCII da 0 a 31 restano codici di controllo con lo stesso codice (la conversione è perfetta; il significato dei controlli non viene convertito).
+
+Il DEL (127) non ha un controllo equivalente in PETSCII: diventa il codice 166, il glifo che somiglia a una cancellazione, ma essendo un controllo che diventa stampabile la conversione è imperfetta, con il Carry a 1. I codici da 128 a 255, che non sono ASCII a 7 bit, sono impossibili: Carry a 1 e `.A` = `$FF`. Il Carry a 1 si distingue quindi con un test su `.A`: `$FF` è impossibile, 166 è il DEL.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o DEL convertito in carattere (`.A` = 166) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-asc_ecm"></a>
+#### ASC_ECM
+
+Converte un codice dalla codifica ASCII a 7 bit alla pseudo- codifica ECM, cioè i codici come si interpretano con il modo Colore di Sfondo Esteso attivo, senza produrre codici di controllo. La conversione separa le due informazioni: `.A` riceve il codice del glifo, da 0 a 63, e il selettore del colore di sfondo, da 0 a 3, va in `__BG_COL`. È il risultato di `ASC_SCR` seguita da `SCR_ECM`: le tabelle hanno i codici Schermo.
+
+Il colore di sfondo segue le regole di `PET_ECM`: `BGCOL0` per i codici da 32 a 63, per le lettere minuscole e per @, [, ] e ^; `BGCOL1` per le lettere maiuscole, per i grafici che sostituiscono i caratteri ASCII che il Commodore non ha, tranne ^ (vedi [Nota #03 di `io/chars.asm`](#nota-chars-03)), e per il DEL; `BGCOL2` per i codici di controllo da 0 a 31, che hanno il glifo inverso del carattere con lo stesso codice di Codice Schermo.
+
+I codici da 128 a 255, che non sono ASCII a 7 bit, non hanno equivalente: la conversione è impossibile, con il Carry a 1 e `.A` = `$FF`, e `__BG_COL` non viene modificato. Altrimenti la conversione è sempre perfetta, con il Carry a 0.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63) (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-asc_ecm_c"></a>
+#### ASC_ECM_C
+
+Converte un codice dalla codifica ASCII a 7 bit alla pseudo- codifica ECM, riconoscendo i codici di controllo. Come `ASC_ECM`, ma ECM, come Codice Schermo, non ha codici di controllo: i codici di controllo ASCII (da 0 a 31 e il DEL, 127) sono impossibili, come lo sono i codici da 128 a 255, che non sono ASCII a 7 bit.
+
+Se la conversione è impossibile il Carry è a 1, `.A` vale `$FF` e `__BG_COL` non viene modificato. Altrimenti il Carry è a 0.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63) (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+### chars_ecm.asm
+
+Transcodifica dei caratteri dalla pseudo-codifica ECM alle altre codifiche (sotto-modulo di chars.asm).
+
+<a id="utilita-ecm_scr"></a>
+#### ECM_SCR
+
+Converte un codice dalla pseudo-codifica ECM, cioè i codici come si interpretano con il modo Colore di Sfondo Esteso attivo, alla codifica Codice Schermo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Il codice Schermo ha il glifo nei sei bit meno significativi e il selettore nei due più significativi. È la conversione inversa di `SCR_ECM`.
+
+Nessuna informazione si perde e non ci sono eccezioni: il Carry è sempre 0. Codice Schermo non ha codici di controllo: `ECM_SCR_C` è identica a `ECM_SCR`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): sempre 0 |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-ecm_scr_c"></a>
+#### ECM_SCR_C
+
+Converte un codice dalla pseudo-codifica ECM alla codifica Codice Schermo, riconoscendo i codici di controllo. Codice Schermo non ha codici di controllo: `ECM_SCR_C` è identica a `ECM_SCR` (vedi `ECM_SCR` per la descrizione).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): sempre 0 |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-ecm_pet"></a>
+#### ECM_PET
+
+Converte un codice dalla pseudo-codifica ECM alla codifica PETSCII, senza produrre codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR` seguita da `SCR_PET` ed è la conversione inversa di `PET_ECM`.
+
+`BGCOL0` dà i codici da 32 a 95 e `BGCOL1` i codici da 160 a 223, quelli generati dalla tastiera. `BGCOL2` e `BGCOL3` sono i caratteri inversi, che PETSCII non ha: si restituisce il carattere normale con Carry a 1, che significa che il carattere in `.A` va stampato in modalità inversa. Il pigreco (glifo 30 con `BGCOL1` o `BGCOL3`) diventa 255, come in `SCR_PET`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = il carattere va stampato in modalità inversa |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-ecm_pet_c"></a>
+#### ECM_PET_C
+
+Converte un codice dalla pseudo-codifica ECM alla codifica PETSCII, producendo codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR_C` seguita da `SCR_PET_C`. Come in `ECM_PET`, `BGCOL0` dà i codici da 32 a 95 e `BGCOL1` i codici da 160 a 223.
+
+I glifi da 0 a 31 con `BGCOL2` e con `BGCOL3` sono i caratteri inversi che in modo Virgolette rappresentano i codici di controllo da 0 a 31 e da 128 a 159, e diventano quei codici (il pigreco con `BGCOL3` diventa 158, il codice di YELLOW). I glifi da 32 a 63 con `BGCOL2` e `BGCOL3` diventano, come in `ECM_PET`, il carattere normale da stampare in modalità inversa.
+
+Il Carry a 0 dice che la conversione è perfetta. Con il Carry a 1 la conversione è imperfetta in uno di due modi, e si distinguono con un test su `.A`: se i bit #6 e #5 di `.A` sono entrambi zero (and #`%01100000` dà zero), `.A` è un codice di controllo; altrimenti `.A` è un carattere stampabile, che va stampato in modalità inversa.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = conversione imperfetta: `.A` è un codice di controllo o un carattere da stampare in modalità inversa (vedi la Descrizione) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-ecm_asc"></a>
+#### ECM_ASC
+
+Converte un codice dalla pseudo-codifica ECM alla codifica ASCII a 7 bit, senza produrre codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR` seguita da `SCR_ASC`.
+
+Valgono le regole di `SCR_ASC`: i glifi con `BGCOL0` e `BGCOL1` si convertono nel carattere ASCII che ha lo stesso aspetto, anche con le sostituzioni di glifo (vedi [Nota #03 di `io/chars.asm`](#nota-chars-03)). `BGCOL2` e `BGCOL3` sono i caratteri inversi, che ASCII non ha: la conversione è impossibile, come per i grafici che non somigliano a nessun carattere ASCII. In quel caso il Carry è a 1 e `.A` vale `$FF`, che non è un codice ASCII valido.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile, con `.A` = `$FF` |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-ecm_asc_c"></a>
+#### ECM_ASC_C
+
+Converte un codice dalla pseudo-codifica ECM alla codifica ASCII a 7 bit, producendo codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR_C` seguita da `SCR_ASC_C`. Come in `ECM_ASC`, ma i glifi da 0 a 31 con `BGCOL2`, che sono i caratteri inversi da 128 a 159 di Codice Schermo, diventano i codici di controllo da 0 a 31, e il glifo 38 con `BGCOL1`, che somiglia a una cancellazione, diventa il DEL (127).
+
+Il Carry a 0 dice che la conversione è riuscita. Con il Carry a 1 la conversione è impossibile o cambia la semantica, e si distinguono con un test su `.A`: se vale `$FF` la conversione è impossibile; altrimenti `.A` è un codice di controllo (da 0 a 31 oppure 127).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3) |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice Schermo equivalente (glifo e sfondo)<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o codice di controllo (vedi la Descrizione) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+### chars_pet.asm
+
+Transcodifica dei caratteri dalla codifica PETSCII alle altre codifiche (sotto-modulo di chars.asm).
+
+<a id="utilita-pet_scr"></a>
+#### PET_SCR
+
+Converte un codice dalla codifica PETSCII alla codifica Codice Schermo, senza distinguere i codici di controllo. La conversione è "glifo per glifo": il carattere stampato con il codice di arrivo ha lo stesso aspetto di quello di partenza.
+
+I codici da 32 a 127 e da 160 a 255 sono caratteri normali. Quelli da 96 a 127 e da 192 a 223 sono due codici per lo stesso glifo, come lo sono quelli da 160 a 191 e da 224 a 255. Il pigreco ha due codici (126 e 255): il 255 va nel codice 94 come il 126.
+
+I codici di controllo (da 0 a 31 e da 128 a 159) non hanno un equivalente in Codice Schermo. Si restituisce il glifo che mostrano in modo Virgolette, cioè il carattere inverso (da 128 a 159 e da 192 a 223), e la conversione è perfetta. Per distinguere i codici di controllo si usa `PET_SCR_C`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione perfetta (sempre); 1 = non si verifica |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-pet_scr_c"></a>
+#### PET_SCR_C
+
+Converte un codice dalla codifica PETSCII alla codifica Codice Schermo, riconoscendo i codici di controllo. Come `PET_SCR`, ma i codici di controllo (da 0 a 31 e da 128 a 159) non hanno un equivalente in Codice Schermo, che non ha codici di controllo: la conversione è impossibile.
+
+Il Carry a 0 dice che la conversione è perfetta. Il Carry a 1 dice che la conversione è impossibile, perché il codice è un codice di controllo, e in questo caso `.A` vale `$FF`. Il valore di `.A` non basta a distinguere i due casi, perché `$FF` è anche un Codice Schermo valido (il pigreco inverso): si guarda il Carry.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = conversione impossibile (codice di controllo) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-pet_asc"></a>
+#### PET_ASC
+
+Converte un codice dalla codifica PETSCII alla codifica ASCII a 7 bit, senza produrre codici di controllo. La conversione è "glifo per glifo", con i codici ASCII letti come li mostra il set di caratteri #2: le lettere minuscole stanno in 65-90 di PETSCII (e in 1-26 di Codice Schermo) e le maiuscole in 193-218.
+
+I caratteri ASCII che il Commodore non ha sono sostituiti da caratteri grafici: la routine li riconverte nel carattere ASCII che sostituiscono (vedi [Nota #03 di `io/chars.asm`](#nota-chars-03)). I codici duplicati di PETSCII (da 96 a 127 e da 192 a 223, da 160 a 191 e da 224 a 255) danno lo stesso risultato. risultato.
+
+I codici di controllo da 0 a 31 sono trattati come i caratteri di Codice Schermo con lo stesso codice: ASCII ha il glifo corrispondente, ma PETSCII lo mostra inverso in modo Virgolette. Il Carry è quindi a 1 e il carattere in `.A` va stampato in modalità inversa. Non hanno equivalente, con il Carry a 1 e `.A` = `$FF` (non è un codice ASCII valido), i codici da 128 a 159, i grafici che non somigliano a nessun carattere ASCII e i controlli 28 e 31, i cui glifi (sterlina e freccia a sinistra) ASCII non ha.
+
+Il Carry a 1 ha dunque due significati, che si distinguono con un test su `.A`: se vale `$FF` la conversione è impossibile; altrimenti `.A` è un carattere da stampare in modalità inversa (il codice originale in `.X` è minore di 32).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o carattere da stampare in modalità inversa |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-pet_asc_c"></a>
+#### PET_ASC_C
+
+Converte un codice dalla codifica PETSCII alla codifica ASCII a 7 bit, riconoscendo i codici di controllo. Come `PET_ASC`, ma i codici di controllo da 0 a 31 diventano i codici di controllo ASCII con lo stesso codice, senza convertirne il significato (che in molti casi è diverso), e la conversione è perfetta.
+
+Il codice 166 e il suo duplicato 230, che somigliano a una cancellazione, diventano il DEL (127), un codice di controllo: la conversione è imperfetta, perché ASCII esegue un controllo invece di mostrare il glifo di partenza. In `PET_ASC` sono impossibili.
+
+I codici da 128 a 159, i grafici che non somigliano a nessun carattere ASCII e quelli da 160 a 191 e da 224 a 255 senza equivalente non hanno una conversione: il Carry è a 1 e `.A` vale `$FF`, che non è un codice ASCII valido.
+
+Il Carry a 1 ha dunque due significati, che si distinguono con un test su `.A`: se vale `$FF` la conversione è impossibile; se vale 127 è il codice di controllo DEL.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o codice di controllo DEL (`.A` = 127) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-pet_ecm"></a>
+#### PET_ECM
+
+Converte un codice dalla codifica PETSCII alla pseudo-codifica ECM, cioè i codici come si interpretano con il modo Colore di Sfondo Esteso attivo. La conversione separa le due informazioni: `.A` riceve il codice del glifo, da 0 a 63, e il selettore del colore di sfondo, da 0 a 3, va in `__BG_COL`. È il risultato di `PET_SCR` seguita da `SCR_ECM`.
+
+Il colore di sfondo dipende solo dal blocco di partenza: `BGCOL0` per i codici da 32 a 95, `BGCOL1` per i codici da 96 a 127 e da 160 a 255 (i caratteri ottenuti con SHIFT e i loro duplicati), `BGCOL2` per i codici di controllo da 0 a 31 e `BGCOL3` per quelli da 128 a 159, che il Kernal mostra come caratteri inversi in modo Virgolette. Il glifo è dato dai sei bit meno significativi del codice Schermo: in ECM i grafici non esistono, e i codici da 160 a 191 e da 224 a 255 hanno i glifi da 32 a 63.
+
+Il pigreco ha due codici, 126 e 255, e ha il glifo 30 con `BGCOL1`: il 255 è l'unica eccezione. La conversione è sempre perfetta, il Carry è a 0. La modalità inversa non è nel codice PETSCII: chi stampa in modalità inversa fa l'OR di `__BG_COL` con `%10`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): 0 = conversione perfetta (sempre); 1 = non si verifica |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-pet_ecm_c"></a>
+#### PET_ECM_C
+
+Converte un codice dalla codifica PETSCII alla pseudo-codifica ECM, riconoscendo i codici di controllo. Come `PET_ECM`, ma i codici di controllo (da 0 a 31 e da 128 a 159) non hanno un equivalente in ECM, che come Codice Schermo non ha codici di controllo: la conversione è impossibile.
+
+Il Carry a 0 dice che la conversione è perfetta. Il Carry a 1 dice che è impossibile, perché il codice è un codice di controllo: `.A` vale `$FF` e `__BG_COL` non viene modificato. Il valore di `.A` non basta a distinguere i due casi, perché `$FF` è anche un codice ECM valido: si guarda il Carry.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63) (`$FF` se la conversione è impossibile)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = conversione impossibile (codice di controllo) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+### chars_scr.asm
+
+Transcodifica dei caratteri dalla codifica Codice Schermo alle altre codifiche (sotto-modulo di chars.asm).
+
+<a id="utilita-scr_pet"></a>
+#### SCR_PET
+
+Converte un codice dalla codifica Codice Schermo alla codifica PETSCII, senza produrre codici di controllo. La conversione è "glifo per glifo": il carattere stampato con il codice di arrivo ha lo stesso aspetto di quello di partenza.
+
+I codici da 0 a 127 sono i caratteri normali. Quelli da 64 a 127 hanno in PETSCII due codici, e si restituisce quello generato dalla tastiera (192-223 e 160-191).
+
+I codici da 128 a 255 sono i caratteri inversi, che PETSCII non ha: si restituisce il carattere normale con Carry a 1, che significa che il carattere in `.A` va stampato in modalità inversa.
+
+Il pigreco è un'eccezione: il codice 94 e il codice 222 (il pigreco inverso) diventano 255, il codice che genera la tastiera.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = il carattere va stampato in modalità inversa |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-scr_pet_c"></a>
+#### SCR_PET_C
+
+Converte un codice dalla codifica Codice Schermo alla codifica PETSCII, producendo codici di controllo per i caratteri inversi che li rappresentano. La conversione è "glifo per glifo", con i codici di controllo mostrati in modo Virgolette.
+
+I codici da 0 a 127 si convertono come in `SCR_PET`, compreso il pigreco (94 diventa 255). I caratteri inversi da 128 a 159 e da 192 a 223 diventano i codici di controllo da 0 a 31 e da 128 a 159, che in modo Virgolette si vedono con quel glifo inverso; il pigreco inverso (222) diventa quindi 158 (il codice di YELLOW). L'alternativa, che è anche la scelta del Kernal nella lettura dello schermo, sarebbe 255 con il Carry a 1, cioè il pigreco da stampare in modalità inversa: non è adottata. I caratteri inversi da 160 a 191 e da 224 a 255 diventano, come in `SCR_PET`, il carattere normale da stampare in modalità inversa.
+
+Il Carry a 0 dice che la conversione è perfetta. Con il Carry a 1 la conversione è imperfetta in uno di due modi, e si distinguono con un test su `.A`: se i bit #6 e #5 di `.A` sono entrambi zero (and #`%01100000` dà zero), `.A` è un codice di controllo, che mostra il glifo inverso solo se viene stampato in modo Virgolette e fuori dalle virgolette esegue il controllo; altrimenti `.A` è un carattere stampabile, che va stampato in modalità inversa. In ogni caso il bit #7 di `.X` dice che il carattere originale era inverso.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica PETSCII<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione perfetta; 1 = conversione imperfetta: `.A` è un codice di controllo o un carattere da stampare in modalità inversa (vedi la Descrizione) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-scr_asc"></a>
+#### SCR_ASC
+
+Converte un codice dalla codifica Codice Schermo alla codifica ASCII a 7 bit, senza produrre codici di controllo. La conversione è "glifo per glifo", con i codici letti come li mostra il set di caratteri #2: da 1 a 26 le lettere minuscole, da 65 a 90 le maiuscole, da 32 a 63 gli stessi caratteri che ha ASCII con quei codici.
+
+I caratteri ASCII che il Commodore non ha sono sostituiti da caratteri grafici: la routine li riconverte nel carattere ASCII che sostituiscono (vedi [Nota #03 di `io/chars.asm`](#nota-chars-03)).
+
+Gli altri codici, cioè i caratteri inversi e i grafici che non somigliano a nessun carattere ASCII, non hanno equivalente: il Carry è a 1 e `.A` vale `$FF`, che non è un codice ASCII valido. Il codice 102, che somiglia a una cancellazione, in questa variante è impossibile, perché il suo equivalente sarebbe il DEL (127), un codice di controllo: lo produce `SCR_ASC_C`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile, con `.A` = `$FF` |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-scr_asc_c"></a>
+#### SCR_ASC_C
+
+Converte un codice dalla codifica Codice Schermo alla codifica ASCII a 7 bit, producendo codici di controllo. Come `SCR_ASC`, con in più due conversioni verso codici di controllo ASCII: i caratteri inversi da 128 a 159 diventano i codici da 0 a 31, e il codice 102, che somiglia a una cancellazione, diventa il DEL, cioè il codice 127.
+
+Il Carry a 0 dice che la conversione è riuscita, con la sostituzione del glifo quando serve. Con il Carry a 1 la conversione è impossibile o cambia la semantica, e si distinguono con un test su `.A`: se vale `$FF` la conversione è impossibile e non ha equivalente ASCII; altrimenti `.A` è un codice di controllo (da 0 a 31 oppure 127), che esegue il controllo invece di mostrare il glifo di partenza.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice carattere in codifica ASCII a 7 bit<br>`.X` (1 byte, CPU): Codice carattere originale<br>Carry (1 bit, .P): 0 = conversione riuscita; 1 = conversione impossibile (`.A` = `$FF`) o codice di controllo (vedi la Descrizione) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-scr_ecm"></a>
+#### SCR_ECM
+
+Converte un codice dalla codifica Codice Schermo alla pseudo- codifica ECM, cioè i codici come si interpretano con il modo Colore di Sfondo Esteso attivo. In ECM i due bit più significativi del codice scelgono il registro del colore di sfondo (`BGCOL0`-`BGCOL3`) e i sei bit restanti il glifo, da 0 a 63.
+
+La conversione separa le due informazioni: `.A` riceve il codice del glifo, cioè il codice con i due bit più significativi azzerati, e il selettore del colore di sfondo, da 0 a 3, va in `__BG_COL`. Nessuna informazione si perde e non ci sono eccezioni: il Carry è sempre 0.
+
+Codice Schermo non ha codici di controllo: `SCR_ECM_C` è identica a `SCR_ECM`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): sempre 0 |
+| Registri Modificati | `.A`, `.X`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-scr_ecm_c"></a>
+#### SCR_ECM_C
+
+Converte un codice dalla codifica Codice Schermo alla pseudo- codifica ECM, trattando i codici di controllo. Codice Schermo non ha codici di controllo, quindi la routine è identica a `SCR_ECM` e c'è solo per completare la famiglia di routine: la conversione separa il codice del glifo (i sei bit meno significativi, in `.A`) dal selettore del colore di sfondo (i due bit più significativi, da 0 a 3, in `__BG_COL`). Nessuna informazione si perde: il Carry è sempre 0.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice carattere in codifica Codice Schermo |
+| Output | `.A` (1 byte, CPU): Codice del glifo in codifica ECM (da 0 a 63)<br>`.X` (1 byte, CPU): Codice carattere originale<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (da 0 a 3)<br>Carry (1 bit, .P): sempre 0 |
+| Registri Modificati | `.A`, `.X`, `.P` (Negative, Zero, Carry), `__BG_COL` |
+
+[↑ Torna al contenuto](#contenuto)
+
+### Note d'uso di `chars.asm`
+
+<a id="nota-chars-01"></a>
+#### Nota #01
+
+Un Commodore a 8 bit riconosce 256 codici carattere. Un codice diventa visibile quando il chip video lo associa a un glifo, cioè a un disegno del set di caratteri: i set sono due, il #1 "Maiuscolo/Grafici" e il #2 "Minuscolo/Maiuscolo". L'aspetto del glifo non cambia il significato del codice, che dipende soltanto dalla codifica.
+
+I codici sono di due tipi: stampabili, che producono un glifo, e di controllo, che eseguono un'azione. In modo Virgolette e in modo Inserimento i codici di controllo perdono l'azione e mostrano un glifo.
+
+**Le codifiche**
+
+La libreria converte tra quattro codifiche:
+
+- Codice Schermo: la codifica più vicina all'hardware, quella in cui sono scritti i 40x25 caratteri della memoria video. Tutti i codici sono stampabili, non esistono codici di controllo e a ogni codice corrisponde un solo glifo. I codici da 0 a 127 sono i caratteri normali, quelli da 128 a 255 gli stessi caratteri in modalità inversa.
+
+- PETSCII: la codifica del BASIC e del Kernal (funzioni `ASC` e `CHR$`). Ha i codici di controllo, e non ha i caratteri inversi: in modo Virgolette il Kernal mostra i controlli con un glifo inverso, senza ambiguità con i glifi stampabili. Alcuni codici sono duplicati: il BASIC normalizza i codici da 96 a 127 in quelli da 192 a 223 e i codici da 224 a 255 in quelli da 160 a 191, quindi i duplicati condividono i glifi.
+
+- ASCII a 7 bit: non è nativa del Commodore, ma serve per lo scambio con altre architetture. Ha solo 128 codici, con i controlli da 0 a 31 e il 127 (DEL), e non ha né i caratteri inversi né i grafici del Commodore.
+
+- ECM: non è una codifica in senso stretto, ma l'interpretazione del Codice Schermo quando è attivo il modo Colore di Sfondo Esteso. I due bit più significativi scelgono il registro del colore di sfondo (`BGCOL0`-`BGCOL3`) e gli altri sei il glifo, da 0 a 63: il glifo è nel codice, lo sfondo in `__BG_COL`. Si tratta come una codifica perché il suo codice contiene un'informazione di colore che le altre non hanno.
+
+**I blocchi**
+
+I 256 codici si dividono in otto blocchi da 32, numerati da 0 a 7 (0 = 0-31, 1 = 32-63 e così via): il blocco è nei tre bit più significativi del codice, e le regole di transcodifica si esprimono meglio con i blocchi.
+
+| Blocco | Codici | Codice Schermo | PETSCII | ASCII |
+|---|---|---|---|---|
+| 0 | 0-31 | normali | controlli | controlli |
+| 1 | 32-63 | normali | stampabili | stampabili |
+| 2 | 64-95 | normali | stampabili | stampabili |
+| 3 | 96-127 | normali | duplicati del 6 | stampabili |
+| 4 | 128-159 | inversi | controlli | inesistenti |
+| 5 | 160-191 | inversi | stampabili | inesistenti |
+| 6 | 192-223 | inversi | stampabili | inesistenti |
+| 7 | 224-255 | inversi | duplicati del 5 | inesistenti |
+
+In ASCII anche il codice 127 è di controllo. In ECM il blocco dice il registro di sfondo: 0 e 1 `BGCOL0`, 2 e 3 `BGCOL1`, 4 e 5 `BGCOL2`, 6 e 7 `BGCOL3`, con gli stessi glifi nei blocchi pari e nei dispari.
+
+<a id="nota-chars-02"></a>
+#### Nota #02
+
+Una transcodifica non può mai essere senza perdite: Codice Schermo non ha i controlli, PETSCII e ASCII non hanno i caratteri inversi, ASCII non ha molti glifi del Commodore, ECM porta nel codice un colore che le altre codifiche non hanno. Ciò che il codice di arrivo non può conservare si conserva altrove, in `__BG_COL`, oppure si segnala con il Carry. Le routine seguono cinque criteri, in quest'ordine.
+
+1. Glifo per glifo.
+
+Una conversione conserva l'aspetto del carattere, non il codice né il significato: il codice di arrivo è quello che rappresenta lo stesso glifo di quello di partenza. I codici di controllo non si traducono nel loro effetto: si convertono nel glifo che mostrano.
+
+2. Un solo codice per glifo.
+
+Quando più codici hanno lo stesso glifo si sceglie sempre quello primario, mai il duplicato: in arrivo su PETSCII i blocchi 5 e 6, non i blocchi 7 e 3 (il pigreco è l'unica eccezione dichiarata).
+
+3. Le transcodifiche si compongono.
+
+Convertire in due passi, passando per una terza codifica, dà lo stesso risultato della conversione diretta. Vale per i caratteri stampabili; i codici di controllo seguono il criterio 5.
+
+4. Andata e ritorno.
+
+Convertire un codice e riconvertire il risultato nella codifica di partenza restituisce il codice originale a tre condizioni: le due conversioni sono perfette (Carry a 0), usano la stessa variante (entrambe senza controlli o entrambe con) e il codice di partenza è un codice primario. I duplicati di PETSCII tornano come il codice primario con lo stesso glifo (il pigreco, 126 o 255, torna sempre come 255). Con ECM il colore di sfondo, che è in `__BG_COL`, deve restare intatto tra le due chiamate.
+
+5. Ciò che non si conserva si dichiara.
+
+Con il Carry a 0 il carattere di arrivo ha l'aspetto di quello di partenza, o del sostituto grafico previsto per i caratteri ASCII che il Commodore non ha. Altrimenti il Carry è a 1: la conversione è imperfetta e si restituisce il meglio possibile (per esempio il glifo normale da stampare in modalità inversa), oppure è impossibile e `.A` vale `$FF`. Nei contratti ogni routine dice come leggere il Carry a 1.
+
+<a id="nota-chars-03"></a>
+#### Nota #03
+
+Otto caratteri ASCII non hanno un glifo uguale nei set di caratteri del C64: la barra inversa, il circonflesso, il carattere di sottolineatura, l'accento grave, le due graffe, la barra verticale e la tilde. Le routine li sostituiscono con grafici che somigliano all'originale e che hanno lo stesso glifo nel set #1 e nel set #2 (con lo stesso codice), in modo che la conversione non dipenda dal set attivo né da un set personalizzato. La sostituzione è reversibile: nel verso opposto il grafico torna a essere il carattere che sostituisce, e la conversione è perfetta (Carry a 0).
+
+| ASCII | Carattere | Codice Schermo | PETSCII | Grafico che lo sostituisce |
+|---|---|---|---|---|
+| 92 | barra inversa | 127 | 191 | due quarti di blocco opposti |
+| 94 | circonflesso | 30 | 94 | freccia in su |
+| 95 | sottolineato | 100 | 164 | linea in basso |
+| 96 | accento grave | 109 | 173 | angolo in basso a sinistra |
+| 123 | graffa aperta | 115 | 179 | tratto con ramo a sinistra |
+| 124 | barra verticale | 93 | 221 | tratto verticale |
+| 125 | graffa chiusa | 107 | 171 | tratto con ramo a destra |
+| 126 | tilde | 64 | 192 | linea a metà altezza |
+
+I controlli ASCII da 0 a 31 e il DEL (127) non hanno un glifo, e anche qui la scelta è di progetto, non una sostituzione: ASCII non ha una convenzione. I controlli sono rappresentati dai caratteri inversi di Codice Schermo da 128 a 159 e il DEL dal codice 102, una trama a scacchiera.
+
+[↑ Torna al contenuto](#contenuto)
+
 <a id="limiti-noti"></a>
 ## Limiti noti
 
@@ -251,6 +841,5 @@ Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pression
 - `KEYSCAN` con `__C128_C64_MODE = 1`: `KBD_NO_KEY` vale `$58`, quindi i codici extra del C128 da `$40` a `$57` superano il controllo di validità e la lettura della matrice non ha senso. I tasti extra del C128 si leggono da altre porte e richiedono un ramo dedicato, non ancora scritto.
 - `KEYSCAN` e il joystick nella porta 2: il controllo del falso tasto è costruito sul joystick nella porta 1. L'influenza del joystick nella porta 2, che si legge sulla porta usata per selezionare le righe, non è stata ancora verificata.
 - `KEYSCAN` controlla un tasto per volta e non distingue due tasti della stessa colonna ([Nota #02](#nota-keyboard_tools-02)).
-- `chars.asm` (conversione di caratteri tra codifiche) è in revisione e non è ancora nel formato delle altre librerie: non va usato.
 
 [↑ Torna al contenuto](#contenuto)
