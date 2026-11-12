@@ -55,7 +55,10 @@
 ;   significativi scelgono il registro del colore di sfondo (BGCOL0-BGCOL3) e
 ;   gli altri sei il glifo, da 0 a 63: il glifo è nel codice, lo sfondo in
 ;   __BG_COL. Si tratta come una codifica perché il suo codice contiene
-;   un'informazione di colore che le altre non hanno.
+;   un'informazione di colore che le altre non hanno. Poiché il VIC-II ignora
+;   i due bit più significativi, i glifi oltre il 63 non esistono: il pigreco
+;   (codice Schermo 94) appare come la freccia in su (glifo 30), come
+;   sull'hardware reale.
 ;
 ; I blocchi
 ; ---------

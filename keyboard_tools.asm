@@ -131,8 +131,8 @@
 ; ------------------------------------------------------------------------------
 ; Descrizione:  Verifica se un tasto, indicato dal suo codice tastiera, è stato
 ;               appena premuto. Legge la matrice della tastiera direttamente dal
-;               CIA #1 e presuppone che i registri di direzione dei suoi due
-;               porti abbiano i valori predefiniti ($FF e $00).
+;               CIA #1 e presuppone che i registri di direzione delle sue due
+;               porte abbiano i valori predefiniti ($FF e $00).
 ;
 ;               Non cerca il tasto premuto e non ne restituisce il codice
 ;               tastiera: il codice tastiera è un dato in ingresso.

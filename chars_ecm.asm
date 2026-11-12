@@ -137,8 +137,10 @@
 ;               quelli generati dalla tastiera. BGCOL2 e BGCOL3 sono i caratteri
 ;               inversi, che PETSCII non ha: si restituisce il carattere normale
 ;               con Carry a 1, che significa che il carattere in .A va stampato
-;               in modalità inversa. Il pigreco (glifo 30 con BGCOL1 o BGCOL3)
-;               diventa 255, come in SCR_PET.
+;               in modalità inversa. Il glifo 30 con BGCOL1 o BGCOL3 è
+;               l'aspetto che in ECM ha il pigreco (codice Schermo 94 o 222, di
+;               cui il VIC-II ignora i due bit più significativi): diventa 255,
+;               come in SCR_PET, e non 94 come con BGCOL0 o BGCOL2.
 ;
 ; Input:
 ;   - .A (1 byte, CPU)       : Codice del glifo in codifica ECM (da 0 a 63)
@@ -227,7 +229,8 @@
 ;               I glifi da 0 a 31 con BGCOL2 e con BGCOL3 sono i caratteri
 ;               inversi che in modo Virgolette rappresentano i codici di
 ;               controllo da 0 a 31 e da 128 a 159, e diventano quei codici (il
-;               pigreco con BGCOL3 diventa 158, il codice di YELLOW). I glifi da
+;               glifo 30 con BGCOL3, che in ECM è l'aspetto del pigreco
+;               inverso, diventa 158, il codice di YELLOW). I glifi da
 ;               32 a 63 con BGCOL2 e BGCOL3 diventano, come in ECM_PET, il
 ;               carattere normale da stampare in modalità inversa.
 ;

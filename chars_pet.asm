@@ -444,11 +444,16 @@
 ;               significativi del codice Schermo: in ECM i grafici non esistono,
 ;               e i codici da 160 a 191 e da 224 a 255 hanno i glifi da 32 a 63.
 ;
-;               Il pigreco ha due codici, 126 e 255, e ha il glifo 30 con
-;               BGCOL1: il 255 è l'unica eccezione. La conversione è sempre
-;               perfetta, il Carry è a 0. La modalità inversa non è nel codice
-;               PETSCII: chi stampa in modalità inversa fa l'OR di __BG_COL con
-;               %10.
+;               Il pigreco ha due codici, 126 e 255. In ECM il VIC-II ignora i
+;               due bit più significativi del codice Schermo e quindi mostra il
+;               pigreco (codice Schermo 94) come la freccia in su, cioè il
+;               glifo 30 con BGCOL1: è ciò che si vede sull'hardware reale, non
+;               una sostituzione di glifo, e perciò non è una transcodifica nel
+;               senso di <io/chars.asm>. Il 126 è nella tabella dei blocchi, il
+;               255 è l'unica eccezione. Il Carry è sempre a 0, perché ECM è
+;               l'interpretazione dei codici e la routine ne dà l'aspetto. La
+;               modalità inversa non è nel codice PETSCII: chi stampa in
+;               modalità inversa fa l'OR di __BG_COL con %10.
 ;
 ; Input:
 ;   - .A (1 byte, CPU)       : Codice carattere in codifica PETSCII
@@ -514,7 +519,7 @@
       !byte %00000001             ; 224-255 > BGCOL1
 
     .EXCEPTIONS:
-      !byte $FF, $1E              ; 255 > 30 (pigreco)
+      !byte $FF, $1E              ; 255 > 30 (pigreco: in ECM appare come freccia in su)
 
     .EXCEPTIONS_END:
 
@@ -609,7 +614,7 @@
       !byte %00000001             ; 224-255 > BGCOL1
 
     .EXCEPTIONS:
-      !byte $FF, $1E              ; 255 > 30 (pigreco)
+      !byte $FF, $1E              ; 255 > 30 (pigreco: in ECM appare come freccia in su)
 
     .EXCEPTIONS_END:
 
