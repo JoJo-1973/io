@@ -48,9 +48,9 @@ Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti 
 La cartella `io` sta nella cartella delle librerie di C64Studio, accanto alle altre librerie di sistema. Il sorgente principale del programma include i moduli che usa nella parte dedicata al codice:
 
 ```
+!source <io/chars.asm>, once
 !source <io/disk_tools.asm>, once
 !source <io/keyboard_tools.asm>, once
-!source <io/chars.asm>, once
 ```
 
 `disk_tools.asm` e `keyboard_tools.asm` non includono altri file: i simboli che usano arrivano dai file di simboli che il programma include prima, nella parte dedicata ai simboli. `chars.asm` è il modulo principale di un modulo spezzato e include da sé i suoi sotto-moduli (`chars_common.asm`, `chars_asc.asm`, `chars_ecm.asm`, `chars_pet.asm` e `chars_scr.asm`): il programma non li include direttamente.
@@ -188,7 +188,7 @@ Requisiti di pagina zero: `__KBD_HISTORY`.
 
 Verifica se un tasto, indicato dal suo codice tastiera, è stato appena premuto. Non cerca quale tasto sia premuto: il codice tastiera è un dato in ingresso ([Nota #01](#nota-keyboard_tools-01)). Il codice tastiera è la posizione del tasto nella matrice, cioè la riga per 8 più la colonna (simboli `KBD_*` di `c64/keyboard.asm`, da `$00` a `$3F`); un codice da `KBD_NO_KEY` in su non è valido.
 
-Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione dei suoi due porti abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio. Il chiamante la azzera prima del primo uso.
+Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione delle sue due porte abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio. Il chiamante la azzera prima del primo uso.
 
 Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note [Nota #03](#nota-keyboard_tools-03), [Nota #04](#nota-keyboard_tools-04) e [Nota #05](#nota-keyboard_tools-05).
 
@@ -486,7 +486,7 @@ Converte un codice dalla pseudo-codifica ECM alla codifica Codice Schermo, ricon
 
 Converte un codice dalla pseudo-codifica ECM alla codifica PETSCII, senza produrre codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR` seguita da `SCR_PET` ed è la conversione inversa di `PET_ECM`.
 
-`BGCOL0` dà i codici da 32 a 95 e `BGCOL1` i codici da 160 a 223, quelli generati dalla tastiera. `BGCOL2` e `BGCOL3` sono i caratteri inversi, che PETSCII non ha: si restituisce il carattere normale con Carry a 1, che significa che il carattere in `.A` va stampato in modalità inversa. Il pigreco (glifo 30 con `BGCOL1` o `BGCOL3`) diventa 255, come in `SCR_PET`.
+`BGCOL0` dà i codici da 32 a 95 e `BGCOL1` i codici da 160 a 223, quelli generati dalla tastiera. `BGCOL2` e `BGCOL3` sono i caratteri inversi, che PETSCII non ha: si restituisce il carattere normale con Carry a 1, che significa che il carattere in `.A` va stampato in modalità inversa. Il glifo 30 con `BGCOL1` o `BGCOL3` è l'aspetto che in ECM ha il pigreco (codice Schermo 94 o 222, di cui il VIC-II ignora i due bit più significativi): diventa 255, come in `SCR_PET`, e non 94 come con `BGCOL0` o `BGCOL2`.
 
 | Voce | Contenuto |
 |---|---|
@@ -501,7 +501,7 @@ Converte un codice dalla pseudo-codifica ECM alla codifica PETSCII, senza produr
 
 Converte un codice dalla pseudo-codifica ECM alla codifica PETSCII, producendo codici di controllo. In ingresso `.A` è il codice del glifo, da 0 a 63, e `__BG_COL` il selettore del colore di sfondo, da 0 a 3: i due bit più significativi di `.A` e i sei più significativi di `__BG_COL` sono ignorati. Equivale a `ECM_SCR_C` seguita da `SCR_PET_C`. Come in `ECM_PET`, `BGCOL0` dà i codici da 32 a 95 e `BGCOL1` i codici da 160 a 223.
 
-I glifi da 0 a 31 con `BGCOL2` e con `BGCOL3` sono i caratteri inversi che in modo Virgolette rappresentano i codici di controllo da 0 a 31 e da 128 a 159, e diventano quei codici (il pigreco con `BGCOL3` diventa 158, il codice di YELLOW). I glifi da 32 a 63 con `BGCOL2` e `BGCOL3` diventano, come in `ECM_PET`, il carattere normale da stampare in modalità inversa.
+I glifi da 0 a 31 con `BGCOL2` e con `BGCOL3` sono i caratteri inversi che in modo Virgolette rappresentano i codici di controllo da 0 a 31 e da 128 a 159, e diventano quei codici (il glifo 30 con `BGCOL3`, che in ECM è l'aspetto del pigreco inverso, diventa 158, il codice di YELLOW). I glifi da 32 a 63 con `BGCOL2` e `BGCOL3` diventano, come in `ECM_PET`, il carattere normale da stampare in modalità inversa.
 
 Il Carry a 0 dice che la conversione è perfetta. Con il Carry a 1 la conversione è imperfetta in uno di due modi, e si distinguono con un test su `.A`: se i bit #6 e #5 di `.A` sono entrambi zero (and #`%01100000` dà zero), `.A` è un codice di controllo; altrimenti `.A` è un carattere stampabile, che va stampato in modalità inversa.
 
@@ -624,7 +624,7 @@ Converte un codice dalla codifica PETSCII alla pseudo-codifica ECM, cioè i codi
 
 Il colore di sfondo dipende solo dal blocco di partenza: `BGCOL0` per i codici da 32 a 95, `BGCOL1` per i codici da 96 a 127 e da 160 a 255 (i caratteri ottenuti con SHIFT e i loro duplicati), `BGCOL2` per i codici di controllo da 0 a 31 e `BGCOL3` per quelli da 128 a 159, che il Kernal mostra come caratteri inversi in modo Virgolette. Il glifo è dato dai sei bit meno significativi del codice Schermo: in ECM i grafici non esistono, e i codici da 160 a 191 e da 224 a 255 hanno i glifi da 32 a 63.
 
-Il pigreco ha due codici, 126 e 255, e ha il glifo 30 con `BGCOL1`: il 255 è l'unica eccezione. La conversione è sempre perfetta, il Carry è a 0. La modalità inversa non è nel codice PETSCII: chi stampa in modalità inversa fa l'OR di `__BG_COL` con `%10`.
+Il pigreco ha due codici, 126 e 255. In ECM il VIC-II ignora i due bit più significativi del codice Schermo e quindi mostra il pigreco (codice Schermo 94) come la freccia in su, cioè il glifo 30 con `BGCOL1`: è ciò che si vede sull'hardware reale, non una sostituzione di glifo, e perciò non è una transcodifica nel senso di `<io/chars.asm>`. Il 126 è nella tabella dei blocchi, il 255 è l'unica eccezione. Il Carry è sempre a 0, perché ECM è l'interpretazione dei codici e la routine ne dà l'aspetto. La modalità inversa non è nel codice PETSCII: chi stampa in modalità inversa fa l'OR di `__BG_COL` con `%10`.
 
 | Voce | Contenuto |
 |---|---|
@@ -770,7 +770,7 @@ La libreria converte tra quattro codifiche:
 
 - ASCII a 7 bit: non è nativa del Commodore, ma serve per lo scambio con altre architetture. Ha solo 128 codici, con i controlli da 0 a 31 e il 127 (DEL), e non ha né i caratteri inversi né i grafici del Commodore.
 
-- ECM: non è una codifica in senso stretto, ma l'interpretazione del Codice Schermo quando è attivo il modo Colore di Sfondo Esteso. I due bit più significativi scelgono il registro del colore di sfondo (`BGCOL0`-`BGCOL3`) e gli altri sei il glifo, da 0 a 63: il glifo è nel codice, lo sfondo in `__BG_COL`. Si tratta come una codifica perché il suo codice contiene un'informazione di colore che le altre non hanno.
+- ECM: non è una codifica in senso stretto, ma l'interpretazione del Codice Schermo quando è attivo il modo Colore di Sfondo Esteso. I due bit più significativi scelgono il registro del colore di sfondo (`BGCOL0`-`BGCOL3`) e gli altri sei il glifo, da 0 a 63: il glifo è nel codice, lo sfondo in `__BG_COL`. Si tratta come una codifica perché il suo codice contiene un'informazione di colore che le altre non hanno. Poiché il VIC-II ignora i due bit più significativi, i glifi oltre il 63 non esistono: il pigreco (codice Schermo 94) appare come la freccia in su (glifo 30), come sull'hardware reale.
 
 **I blocchi**
 
