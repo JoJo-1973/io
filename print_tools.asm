@@ -55,7 +55,7 @@
 ;
 ; PUT_CHAR_ECM_WIDE:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
-;   lda #$1D                      ; Codice PETSCII per spostare il cursore
+;   lda #PETSCII_CURSOR_RIGHT     ; Codice PETSCII per spostare il cursore
 ;                                 ; a destra di una posizione
 ;   jsr CHROUT
 ;
@@ -67,10 +67,10 @@
 ; PUT_CHAR_VERTICAL:
 ;   jsr CHROUT                    ; Stampa il carattere
 ;
-;   lda #$11                      ; Codice PETSCII per spostare il cursore
+;   lda #PETSCII_CURSOR_DOWN      ; Codice PETSCII per spostare il cursore
 ;                                 ; in basso di una posizione
 ;   jsr CHROUT
-;   lda #$9D                      ; Codice PETSCII per spostare il cursore
+;   lda #PETSCII_CURSOR_LEFT      ; Codice PETSCII per spostare il cursore
 ;                                 ; a sinistra di una posizione
 ;   jsr CHROUT
 ;
@@ -697,6 +697,7 @@
 ;
 ; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BG_COL, RVS
 ; Dipendenze Esterne:   <c64/kernal.asm>
+;                       <c64/petscii.asm>
 ;                       <c64/symbols.asm>
 ;                       <io/chars.asm>
 ;                       <system/branch.asm>
@@ -719,10 +720,10 @@
       txa                           ; Codice di controllo: se è 0 oppure {RVS} ON (18)
       beq .Exit_M_PUT_ECM_CHAR      ; oppure {RVS} OFF (146) esci senza stampare.
 
-      cmp #$12
+      cmp #PETSCII_REVERSE_ON
       beq .Exit_M_PUT_ECM_CHAR
 
-      cmp #$92
+      cmp #PETSCII_REVERSE_OFF
       beq .Exit_M_PUT_ECM_CHAR
 
       cmp #$05                      ; Se non è un codice di cambio del colore di sfondo
