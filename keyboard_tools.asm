@@ -252,8 +252,9 @@
       lda CIAPRB
       and .KBD_COLUMN,y
 
-      bne .No_Key                 ; Un risultato diverso da zero indica che il tasto non è
-                                  ; stato premuto.
+      ; Un risultato diverso da zero indica che il tasto non è
+      ; stato premuto.
+      bne .No_Key                 ; IF: il tasto è premuto
 
       lda #%11111111              ; Se invece il risultato è zero rileggi l'intera colonna
       sta CIAPRA                  ; per essere certi che i joystick #1 e #2
@@ -263,7 +264,8 @@
       beq .Exit_KEYSCAN_False_Key ; Ancora zero: è il joystick, non la tastiera.
 
       cmp __KBD_HISTORY           ; Confronta con la serie storica.
-      beq .No_New_Press           ; Sono uguali: il tasto è ancora tenuto.
+      ; Sono uguali: il tasto è ancora tenuto.
+      beq .No_New_Press           ; IF: è una nuova pressione
 
       sta __KBD_HISTORY           ; Nuova pressione: aggiorna la serie storica.
       lda #%10000000              ; Nuova pressione: Negative = 1, Zero = 0.

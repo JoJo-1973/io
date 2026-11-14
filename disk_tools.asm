@@ -5,6 +5,7 @@
 ; DESCRIZIONE:    Utilità per la gestione delle unità disco.
 ; CONTENUTO:      DISK_STATUS         Legge lo stato dell'unità disco
 ;                 DECODE_DISK_STATUS  Decodifica lo stato dell'unità disco
+;                 DISK_GET_NUMBER     Converte due cifre decimali da STACK
 ;                 DISK_DIRECTORY      Stampa la directory del disco
 ;                 DISK_COMMAND        Invia un comando all'unità disco
 ; DIPENDENZE:     Nessuna
@@ -141,7 +142,7 @@
     DECODE_DISK_STATUS:
       ldy #0
 
-      jsr .Get_Number                   ; Legge il codice dell'errore (NN).
+      jsr DISK_GET_NUMBER               ; Legge il codice dell'errore (NN).
       bcs .Exit_DECODE_DISK_STATUS_Bad_Format
 
       sta ._ERROR_CODE
@@ -165,7 +166,7 @@
       cmp #$2C
       bne .Loop_Skip_Message            ; REPEAT UNTIL: il carattere è una virgola
 
-      jsr .Get_Number                   ; Legge TT.
+      jsr DISK_GET_NUMBER               ; Legge TT.
       bcs .Exit_DECODE_DISK_STATUS_Bad_Format
 
       sta ._TRACK
@@ -176,7 +177,7 @@
       cmp #$2C
       bne .Exit_DECODE_DISK_STATUS_Bad_Format
 
-      jsr .Get_Number                   ; Legge SS.
+      jsr DISK_GET_NUMBER               ; Legge SS.
       bcs .Exit_DECODE_DISK_STATUS_Bad_Format
 
       ldx STACK,y                       ; Dopo SS ci deve essere la fine del messaggio.
@@ -194,15 +195,51 @@
       sec
       rts
 
-    ; Converte in binario due cifre decimali lette da STACK,y.
-    .Get_Number:
+    ._ERROR_CODE:
+      !byte 0
+
+    ._TRACK:
+      !byte 0
+
+  !zone
+}
+
+; ==============================================================================
+; SUBROUTINE: DISK_GET_NUMBER
+; ------------------------------------------------------------------------------
+; Descrizione:  Converte in binario due cifre decimali lette da STACK, a partire
+;               dalla posizione .Y, e avanza .Y di 2. È una subroutine di uso
+;               interno a DECODE_DISK_STATUS.
+;
+;               Se una delle due cifre non è valida esce con il Carry a 1 e .A
+;               e .X indefiniti.
+;
+; Input:
+;   - .Y (1 byte, CPU)            : Indice in STACK della prima cifra
+;   - STACK (2 byte, RAM)         : Le due cifre, in codice ASCII
+;
+; Output:
+;   - .A (1 byte, CPU)            : Numero da 0 a 99
+;   - .Y (1 byte, CPU)            : Indice della posizione successiva
+;   - Flag Carry (1 bit, .P)      : 0 = cifre valide; 1 = cifre non valide
+;
+; Variazione Stack (.S):
+;   - Stabile
+;
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry)
+; Dipendenze Esterne:   <c64/symbols.asm>
+; ==============================================================================
+!if (__USE_DECODE_DISK_STATUS = 1) {
+  !zone Disk_Get_Number
+
+    DISK_GET_NUMBER:
       lda STACK,y
       iny
       sec
 
       sbc #$30                          ; Sottrae il codice della cifra "0".
       cmp #10
-      bcs .Exit_DECODE_DISK_STATUS_Get_Number
+      bcs .Exit_DISK_GET_NUMBER
 
       tax                               ; .X = decine.
 
@@ -212,7 +249,7 @@
 
       sbc #$30
       cmp #10
-      bcs .Exit_DECODE_DISK_STATUS_Get_Number
+      bcs .Exit_DISK_GET_NUMBER
 
       cpx #0
       beq .Number_Valid
@@ -229,14 +266,8 @@
     .Number_Valid:
       clc                               ; Segnala che le due cifre sono valide.
 
-    .Exit_DECODE_DISK_STATUS_Get_Number:
+    .Exit_DISK_GET_NUMBER:
       rts
-
-    ._ERROR_CODE:
-      !byte 0
-
-    ._TRACK:
-      !byte 0
 
   !zone
 }
