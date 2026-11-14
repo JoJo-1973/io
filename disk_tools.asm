@@ -117,6 +117,7 @@
 ;               e .Y sono indefiniti. Il flag di Carry dice solo se il messaggio
 ;               è stato decodificato, non se il disco ha segnalato un errore:
 ;               per saperlo il chiamante guarda .A (0 = nessun errore).
+;               Assembla anche DISK_GET_NUMBER.
 ;
 ; Input:
 ;   - STACK (fino a 40 byte, RAM) : Messaggio di stato terminato da $00
