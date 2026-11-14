@@ -39,30 +39,32 @@
 ; NOTA #02
 ; --------
 ; Le subroutine PRINT_* possono essere personalizzate con una propria subroutine
-; di stampa modificando il valore del punto di configurazione __PUT_CHAR.
+; di stampa (il driver), assegnando la sua etichetta al punto di
+; personalizzazione __PUT_CHAR in config.asm, per esempio
+; __PUT_CHAR = PUT_CHAR_ECM.
 ;
 ; Esempio 1: Driver di stampa in modo ECM.
 ;
-; __PUT_CHAR:
+; PUT_CHAR_ECM:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;
-; .Exit___PUT_CHAR:
+; .Exit_PUT_CHAR_ECM:
 ;   rts
 ;
 ; Esempio 2: Driver di stampa in modo ECM a doppia spaziatura.
 ;
-; __PUT_CHAR:
+; PUT_CHAR_ECM_WIDE:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;   lda #$1D                      ; Codice PETSCII per spostare il cursore
 ;                                 ; a destra di una posizione
 ;   jsr CHROUT
 ;
-; .Exit___PUT_CHAR:
+; .Exit_PUT_CHAR_ECM_WIDE:
 ;   rts
 ;
 ; Esempio 3: Driver di stampa in verticale.
 ;
-; __PUT_CHAR:
+; PUT_CHAR_VERTICAL:
 ;   jsr CHROUT                    ; Stampa il carattere
 ;
 ;   lda #$11                      ; Codice PETSCII per spostare il cursore
@@ -72,7 +74,7 @@
 ;                                 ; a sinistra di una posizione
 ;   jsr CHROUT
 ;
-; .Exit___PUT_CHAR:
+; .Exit_PUT_CHAR_VERTICAL:
 ;   rts
 ;
 ;
@@ -291,24 +293,25 @@
       pha                           ; e salvalo sullo stack.
 
       cmp #$FF                      ; Se è diverso da $FF allora è una coordinata.
-      bne .Else_Coord
+      bne .Else_Coord               ; IF: il primo byte è $FF
 
       inc $00,x                     ; Esamina il byte successivo:
-      bne .No_Carry_Marker
+      bne .No_Carry_Marker          ; IF: il byte basso del puntatore è zero
 
       inc $01,x
 
     .No_Carry_Marker:
       lda ($00,x)
       cmp #$FF                      ; è il marcatore di fine messaggio?
-      bne .Else_Print_Chars         ; No, allora stampa i caratteri che seguono nella posizione
-                                    ; corrente del cursore.
+      ; No, allora stampa i caratteri che seguono nella posizione
+      ; corrente del cursore.
+      bne .Else_Print_Chars         ; IF: il secondo byte è $FF
 
     .Clear_Stack:
       pla                           ; Pulisci lo stack e riporta il puntatore all'inizio del
       lda $00,x                     ; marcatore di fine tabella così che successive chiamate alla
                                     ; subroutine non abbiano effetto.
-      bne .No_Borrow_Pointer
+      bne .No_Borrow_Pointer        ; IF: il byte basso del puntatore è zero
 
       dec $01,x
 
@@ -320,9 +323,10 @@
       rts
 
     .Else_Coord:
-      inc $00,x                     ; Recupera il byte con il numero di colonna alla quale muovere
-                                    ; il cursore.
-      bne .No_Carry_Column
+      ; Recupera il byte con il numero di colonna alla quale muovere
+      ; il cursore.
+      inc $00,x                     ; ELSE
+      bne .No_Carry_Column          ; IF: il byte basso del puntatore è zero
 
       inc $01,x
 
@@ -340,7 +344,8 @@
       +m_Skip1                      ; e salta la prossima istruzione.
 
     .Else_Print_Chars:
-      pla                           ; Pulisci lo stack.
+      ; Pulisci lo stack.
+      pla                           ; ELSE
 
       jmp .Loop_Check_Char          ; WHILE
 
@@ -349,7 +354,7 @@
 
     .Loop_Check_Char:
       inc $00,x                     ; Punta al carattere da stampare.
-      bne .No_Carry_Char
+      bne .No_Carry_Char            ; IF: il byte basso del puntatore è zero
 
       inc $01,x
 
@@ -597,9 +602,10 @@
 
       lda (INDEX2),y
       cmp #$FF                      ; È il marcatore di "posizione attuale"?
-      bne .Else_Coord               ; No, estrai le coordinate
+      ; No, estrai le coordinate.
+      bne .Else_Coord               ; IF: il primo byte è $FF
 
-      +m_Inc16 INDEX2               ; altrimenti scarta il byte successivo.
+      +m_Inc16 INDEX2               ; Altrimenti scarta il byte successivo.
       +m_Bra .Print_Char
 
     .Else_Coord:
@@ -705,8 +711,10 @@
       sty ._TEMPY
 
       tax                           ; Salva una copia del codice PETSCII originale.
-      and #%01100000                ; Se i bit #6 e #5 non sono entrambi a zero il codice
-      bne .Else_Printable           ; non è di controllo: passa alla stampa.
+      ; Se i bit #6 e #5 non sono entrambi a zero il codice non è di
+      ; controllo: passa alla stampa.
+      and #%01100000
+      bne .Else_Printable           ; IF: il codice è di controllo
 
       txa                           ; Codice di controllo: se è 0 oppure {RVS} ON (18)
       beq .Exit_M_PUT_ECM_CHAR      ; oppure {RVS} OFF (146) esci senza stampare.
@@ -725,7 +733,8 @@
       jmp .Exit_M_PUT_ECM_CHAR      ; e finisci senza stampare.
 
     .Else_Printable:
-      txa                           ; Codice stampabile: recupera il codice originale.
+      ; Codice stampabile: recupera il codice originale.
+      txa                           ; ELSE
 
       ; Se il codice è un'eccezione (255) .A contiene già il codice
       ; normalizzato e la macro salta a .Apply_BGCOL.
