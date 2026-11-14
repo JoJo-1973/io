@@ -159,8 +159,9 @@
 ; 128 a 159 e il DEL dal codice 102, una trama a scacchiera.
 ; ******************************************************************************
 
-!source "chars_common.asm", once
-!source "chars_asc.asm", once
-!source "chars_ecm.asm", once
-!source "chars_pet.asm", once
-!source "chars_scr.asm", once
+; PROVA TEMPORANEA: once sospeso (LIB-01).
+!source "chars_common.asm"
+!source "chars_asc.asm"
+!source "chars_ecm.asm"
+!source "chars_pet.asm"
+!source "chars_scr.asm"
