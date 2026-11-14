@@ -313,6 +313,7 @@
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
 ;                       STACK (fino a 256 byte)
 ; Dipendenze Esterne:   <c64/kernal.asm>
+;                       <c64/petscii.asm>
 ;                       <c64/symbols.asm>
 ; ==============================================================================
 !if (__USE_DISK_DIRECTORY = 1) {
@@ -365,7 +366,7 @@
       jmp .Loop_Check_Line              ; WHILE
 
     .Loop_Print_Line:
-      lda #$0D                          ; Va a capo prima di ogni linea.
+      lda #PETSCII_RETURN               ; Va a capo prima di ogni linea.
       jsr __PUT_CHAR
 
       ; Legge i due byte della lunghezza in blocchi (prima il byte
@@ -412,7 +413,7 @@
       bcc .Exit_DISK_DIRECTORY          ; e salta la stampa dell'errore.
 
     .Exit_DISK_DIRECTORY_Error:
-      lda #$0D                          ; Va a capo
+      lda #PETSCII_RETURN               ; Va a capo
       jsr __PUT_CHAR
       lda FA                            ; e legge il messaggio di stato.
       jsr DISK_STATUS
