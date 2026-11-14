@@ -87,7 +87,8 @@
 ; sfondo ECM_BG1.
 ; ******************************************************************************
 
-!source "vic_ii_tools.asm", once
+; PROVA TEMPORANEA: once sospeso (LIB-01).
+; !source "vic_ii_tools.asm", once
 
 ; ==============================================================================
 ; MACRO: m_At
