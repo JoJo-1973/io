@@ -376,7 +376,7 @@
       jsr CHRIN
       jsr LINPRT
 
-      lda #$20                          ; Stampa uno spazio separatore.
+      lda #PETSCII_SPACE                ; Stampa uno spazio separatore.
       jsr __PUT_CHAR
 
       jmp .Loop_Check_Char              ; WHILE
