@@ -24,9 +24,10 @@
 ; KEYSCAN controlla un tasto per volta e va chiamata a ogni passaggio di
 ; lettura. Segnala una nuova pressione una sola volta: finché il tasto resta
 ; premuto, le chiamate successive non riportano niente di nuovo. Un codice
-; tastiera non valido (da KBD_NO_KEY in su) è un errore, come il falso tasto.
-; Con il Carry a 0, il flag di Negative dice se il tasto è premuto e il flag di
-; Zero se la pressione è nuova. Gli esempi sono nelle note da [NOTA #03] in poi.
+; tastiera non valido (da KEYCODE_NO_KEY in su) è un errore, come il falso
+; tasto. Con il Carry a 0, il flag di Negative dice se il tasto è premuto e il
+; flag di Zero se la pressione è nuova. Gli esempi sono nelle note da [NOTA #03]
+; in poi.
 ;
 ;
 ; NOTA #02
@@ -47,7 +48,7 @@
 ; Il Carry a 1 segnala un errore, il flag di Zero a 0 una nuova pressione.
 ; Esempio:
 ;
-;   lda #KBD_SPACE                ; Tasto da scansionare.
+;   lda #KEYCODE_SPACE            ; Tasto da scansionare.
 ;   jsr KEYSCAN
 ;   bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
 ;
@@ -68,7 +69,7 @@
 ; gestore IRQ chiamato a ogni fotogramma, e _CANDIDATE è una cella di RAM del
 ; programma, azzerata all'avvio. Esempio:
 ;
-;   lda #KBD_SPACE                ; Tasto da scansionare.
+;   lda #KEYCODE_SPACE            ; Tasto da scansionare.
 ;   jsr KEYSCAN
 ;   bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
 ;
@@ -107,7 +108,7 @@
 ; un gestore IRQ, perché i cicli non cedono mai il controllo. Esempio:
 ;
 ; .Loop_Scan_Press:
-;   lda #KBD_SPACE                ; REPEAT
+;   lda #KEYCODE_SPACE            ; REPEAT
 ;   jsr KEYSCAN
 ;   bcs .Loop_Scan_Press          ; Falso tasto: riprova.
 ;
@@ -117,7 +118,7 @@
 ;   inc EXTCOL                    ; Tasto premuto: cambia il bordo.
 ;
 ; .Loop_Poll_Release:
-;   lda #KBD_SPACE                ; REPEAT
+;   lda #KEYCODE_SPACE            ; REPEAT
 ;   jsr KEYSCAN
 ;   bcs .Loop_Poll_Release        ; Falso tasto: riprova.
 ;
@@ -137,11 +138,11 @@
 ;               Non cerca il tasto premuto e non ne restituisce il codice
 ;               tastiera: il codice tastiera è un dato in ingresso.
 ;
-;               Un codice tastiera da KBD_NO_KEY in su non è valido: la
+;               Un codice tastiera da KEYCODE_NO_KEY in su non è valido: la
 ;               subroutine esce subito con il Carry a 1, senza toccare le porte.
 ;
 ;               Il codice tastiera è la posizione del tasto nella matrice, cioè
-;               la riga per 8 più la colonna (KBD_*, da $00 a $3F). La serie
+;               la riga per 8 più la colonna (KEYCODE_*, da $00 a $3F). La serie
 ;               storica, __KBD_HISTORY, è un solo byte: contiene la maschera
 ;               della colonna finché il tasto resta premuto e vale zero dopo
 ;               il rilascio.
@@ -172,7 +173,7 @@
 ;
 ; Registri Modificati:  .A, .P (Negative, Zero, Carry), CIAPRA, CIAPRB,
 ;                       __KBD_HISTORY
-; Dipendenze Esterne:   <c64/keyboard.asm>
+; Dipendenze Esterne:   <c64/keycodes.asm>
 ;                       <c64/symbols.asm>
 ;                       <chip/cia.asm>
 ; ==============================================================================
@@ -184,12 +185,13 @@
       ; * TO-DO: soglia dei codici tastiera con __C128_C64_MODE = 1.   *
       ; *                                                              *
       ; * Che cosa fa il codice: scarta i codici tastiera da           *
-      ; * KBD_NO_KEY in su e legge la matrice con le tabelle .KBD_ROW  *
-      ; * e .KBD_COLUMN, che hanno 8 voci ciascuna.                    *
+      ; * KEYCODE_NO_KEY in su e legge la matrice con le tabelle       *
+      ; * .KBD_ROW e .KBD_COLUMN, che hanno 8 voci ciascuna.           *
       ; *                                                              *
-      ; * Che cosa succede davvero: con __C128_C64_MODE = 1 KBD_NO_KEY *
-      ; * vale $58, quindi i codici extra del C128 da $40 a $57        *
-      ; * superano il controllo e leggono oltre la fine delle tabelle. *
+      ; * Che cosa succede davvero: con __C128_C64_MODE = 1            *
+      ; * KEYCODE_NO_KEY vale $58, quindi i codici extra del C128 da   *
+      ; * $40 a $57 superano il controllo e leggono oltre la fine      *
+      ; * delle tabelle.                                               *
       ; *                                                              *
       ; * Conseguenze: la riga selezionata è un valore preso dai byte  *
       ; * che seguono le tabelle, e l'esito non ha senso.              *
@@ -227,7 +229,7 @@
       ; * Fonte: segnalazione dell'utente, 2026-11-06.                 *
       ; ****************************************************************
 
-      cmp #KBD_NO_KEY             ; Il codice tastiera è valido?
+      cmp #KEYCODE_NO_KEY         ; Il codice tastiera è valido?
       bcs .Exit_KEYSCAN_Bad_Keycode
 
       pha                         ; Salva il codice tastiera.
