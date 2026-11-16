@@ -1,19 +1,14 @@
 # io
 
-Utilità di input/output per il Commodore 64: gestione delle unità disco, lettura diretta della tastiera e transcodifica dei caratteri tra le codifiche Codice Schermo, PETSCII, ASCII a 7 bit ed ECM. La libreria `io` fa parte della Libreria di Sistema (progetto `io.c64`) ed è scritta in assembly 6510 per C64Studio (sintassi ACME).
+Utilità di input/output per il Commodore 64: gestione delle unità disco, lettura diretta della tastiera, stampa di caratteri e messaggi e transcodifica dei caratteri tra le codifiche Codice Schermo, PETSCII, ASCII a 7 bit ed ECM. La libreria `io` fa parte della Libreria di Sistema (progetto `io.c64`) ed è scritta in assembly 6510 per C64Studio (sintassi ACME).
 
-Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti d'interfaccia nelle intestazioni delle subroutine.
+Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti d'interfaccia nelle intestazioni delle macro e delle subroutine.
 
 <a id="contenuto"></a>
 ## Contenuto
 
 | Modulo | Utilità | Descrizione |
 |---|---|---|
-| [`disk_tools.asm`](#modulo-disk_tools) | [`DISK_STATUS`](#utilita-disk_status) | Legge lo stato dell'unità disco |
-| | [`DECODE_DISK_STATUS`](#utilita-decode_disk_status) | Decodifica lo stato dell'unità disco |
-| | [`DISK_DIRECTORY`](#utilita-disk_directory) | Stampa la directory del disco |
-| | [`DISK_COMMAND`](#utilita-disk_command) | Invia un comando all'unità disco |
-| [`keyboard_tools.asm`](#modulo-keyboard_tools) | [`KEYSCAN`](#utilita-keyscan) | Scansiona un tasto della matrice della tastiera |
 | [`chars.asm`](#modulo-chars) | [`m_Scan_Exceptions`](#utilita-m_scan_exceptions) | Cerca nella tabella delle eccezioni |
 | | [`m_Apply_Table`](#utilita-m_apply_table) | Sostituisce i 3 bit alti del codice |
 | | [`ASC_SCR`](#utilita-asc_scr) | Da ASCII a Codice Schermo, senza controlli |
@@ -40,6 +35,19 @@ Questo documento deriva dai sorgenti. Per ogni dettaglio fanno fede i contratti 
 | | [`SCR_ASC_C`](#utilita-scr_asc_c) | Da Codice Schermo a ASCII, con controlli |
 | | [`SCR_ECM`](#utilita-scr_ecm) | Da Codice Schermo a ECM, senza controlli |
 | | [`SCR_ECM_C`](#utilita-scr_ecm_c) | Da Codice Schermo a ECM, con controlli |
+| [`disk_tools.asm`](#modulo-disk_tools) | [`DISK_STATUS`](#utilita-disk_status) | Legge lo stato dell'unità disco |
+| | [`DECODE_DISK_STATUS`](#utilita-decode_disk_status) | Decodifica lo stato dell'unità disco |
+| | [`DISK_DIRECTORY`](#utilita-disk_directory) | Stampa la directory del disco |
+| | [`DISK_COMMAND`](#utilita-disk_command) | Invia un comando all'unità disco |
+| [`keyboard_tools.asm`](#modulo-keyboard_tools) | [`KEYSCAN`](#utilita-keyscan) | Scansiona un tasto della matrice della tastiera |
+| [`print_tools.asm`](#modulo-print_tools) | [`m_At`](#utilita-m_at) | Posiziona il cursore sullo schermo |
+| | [`PLOT_CHAR`](#utilita-plot_char) | Memorizza un carattere nella memoria schermo |
+| | [`COLOR_CHAR`](#utilita-color_char) | Cambia il colore di un carattere |
+| | [`PRINT_MSG`](#utilita-print_msg) | Stampa una tabella di messaggi |
+| | [`PRINT_NTH`](#utilita-print_nth) | Stampa un messaggio estratto da una tabella |
+| | [`PRINT_RAW`](#utilita-print_raw) | Stampa un messaggio puntato da .A / .Y |
+| | [`PRINT_IMM`](#utilita-print_imm) | Stampa il messaggio che segue la chiamata |
+| | [`m_Put_ECM_Char`](#utilita-m_put_ecm_char) | Invia un carattere gestendo il modo ECM |
 
 ## Uso
 
@@ -51,27 +59,24 @@ La cartella `io` sta nella cartella delle librerie di C64Studio, accanto alle al
 !source <io/chars.asm>, once
 !source <io/disk_tools.asm>, once
 !source <io/keyboard_tools.asm>, once
+!source <io/print_tools.asm>, once
 ```
 
-`disk_tools.asm` e `keyboard_tools.asm` non includono altri file: i simboli che usano arrivano dai file di simboli che il programma include prima, nella parte dedicata ai simboli. `chars.asm` è il modulo principale di un modulo spezzato e include da sé i suoi sotto-moduli (`chars_common.asm`, `chars_asc.asm`, `chars_ecm.asm`, `chars_pet.asm` e `chars_scr.asm`): il programma non li include direttamente.
+`disk_tools.asm` e `keyboard_tools.asm` non includono altri file. `print_tools.asm` include a sua volta `vic_ii_tools.asm` della libreria `chip`. `chars.asm` è il modulo principale di un modulo spezzato e include da sé i suoi sotto-moduli (`chars_common.asm`, `chars_asc.asm`, `chars_ecm.asm`, `chars_pet.asm` e `chars_scr.asm`): il programma non li include direttamente. I simboli che i moduli usano arrivano da altri file, che il programma include prima, nella parte dedicata ai simboli (ultima colonna):
 
 | Modulo | Include da sé | File da includere prima |
 |---|---|---|
-| `disk_tools.asm` | Nessuno | `<c64/kernal.asm>`, `<c64/symbols.asm>` |
-| `keyboard_tools.asm` | Nessuno | `<c64/keyboard.asm>`, `<c64/symbols.asm>`, `<chip/cia.asm>` |
-| `chars.asm` | `<io/chars_common.asm>`, `<io/chars_asc.asm>`, `<io/chars_ecm.asm>`, `<io/chars_pet.asm>`, `<io/chars_scr.asm>` | Nessuno |
+| `chars.asm` | `<io/chars_common.asm>`, `<io/chars_asc.asm>`, `<io/chars_ecm.asm>`, `<io/chars_pet.asm>`, `<io/chars_scr.asm>` | `<system/ascii_7bit.asm>`, `<system/petscii.asm>`, `<system/screencodes.asm>` |
+| `disk_tools.asm` | Nessuno | `<c64/kernal.asm>`, `<c64/symbols.asm>`, `<system/petscii.asm>` |
+| `keyboard_tools.asm` | Nessuno | `<c64/symbols.asm>`, `<chip/cia.asm>`, `<system/keycodes.asm>` |
+| `print_tools.asm` | `<chip/vic_ii_tools.asm>` | `<c64/kernal.asm>`, `<c64/symbols.asm>`, `<chip/vic_ii.asm>`, `<io/chars.asm>`, `<mem/mem16.asm>`, `<system/branch.asm>`, `<system/petscii.asm>`, `<system/standard.asm>` |
 
 ### Configurazione
 
-Ogni subroutine viene assemblata solo se il suo parametro vale `1` nella copia di `config.asm` della Soluzione. Nel template tutti i parametri valgono `0`.
+Le macro si assemblano quando vengono invocate. Ogni subroutine viene assemblata solo se il suo parametro vale `1` nella copia di `config.asm` della Soluzione. Nel template tutti i parametri valgono `0`.
 
 | Parametro | Subroutine | Richiede anche |
 |---|---|---|
-| `__USE_DISK_STATUS` | `DISK_STATUS` | |
-| `__USE_DECODE_DISK_STATUS` | `DECODE_DISK_STATUS` | |
-| `__USE_DISK_DIRECTORY` | `DISK_DIRECTORY` | `__USE_DISK_STATUS` |
-| `__USE_DISK_COMMAND` | `DISK_COMMAND` | `__USE_DISK_STATUS` |
-| `__USE_KEYSCAN` | `KEYSCAN` | |
 | `__USE_ASC_SCR` | `ASC_SCR` | |
 | `__USE_ASC_SCR_C` | `ASC_SCR_C` | |
 | `__USE_ASC_PET` | `ASC_PET` | |
@@ -96,205 +101,26 @@ Ogni subroutine viene assemblata solo se il suo parametro vale `1` nella copia d
 | `__USE_SCR_ASC_C` | `SCR_ASC_C` | |
 | `__USE_SCR_ECM` | `SCR_ECM` | |
 | `__USE_SCR_ECM_C` | `SCR_ECM_C` | |
+| `__USE_DISK_STATUS` | `DISK_STATUS` |  |
+| `__USE_DECODE_DISK_STATUS` | `DECODE_DISK_STATUS` |  |
+| `__USE_DISK_DIRECTORY` | `DISK_DIRECTORY` | `__USE_DISK_STATUS` |
+| `__USE_DISK_COMMAND` | `DISK_COMMAND` | `__USE_DISK_STATUS` |
+| `__USE_KEYSCAN` | `KEYSCAN` |  |
+| `__USE_PLOT_CHAR` | `PLOT_CHAR` | `__USE_COMPUTE_CELL_ADDRESS` |
+| `__USE_COLOR_CHAR` | `COLOR_CHAR` | `__USE_COMPUTE_CELL_ADDRESS` |
+| `__USE_PRINT_MSG` | `PRINT_MSG` |  |
+| `__USE_PRINT_NTH` | `PRINT_NTH` | `__USE_PRINT_MSG` |
+| `__USE_PRINT_RAW` | `PRINT_RAW` |  |
+| `__USE_PRINT_IMM` | `PRINT_IMM` |  |
 
 Punti di personalizzazione usati dalla libreria, definiti anch'essi in `config.asm`:
 
 | Punto di personalizzazione | Usato da | Valore nel template | Significato |
 |---|---|---|---|
-| `__PUT_CHAR` | `DISK_DIRECTORY` | `$FFD2` (CHROUT) | Subroutine di stampa di un carattere |
-| `__KBD_HISTORY` | `KEYSCAN` | `$05` | Cella in ZP: serie storica di `KEYSCAN`, da azzerare prima del primo uso |
-| `__BG_COL` | `ASC_ECM`, `ASC_ECM_C`, `ECM_SCR`, `ECM_SCR_C`, `ECM_PET`, `ECM_PET_C`, `ECM_ASC`, `ECM_ASC_C`, `PET_ECM`, `PET_ECM_C`, `SCR_ECM`, `SCR_ECM_C` | `$03` | Cella in ZP: selettore del colore di sfondo ECM (0-3) |
-
-<a id="modulo-disk_tools"></a>
-## disk_tools.asm
-
-Utilità per la gestione delle unità disco. Tutte ricevono il numero dell'unità disco in `.A`.
-
-Il messaggio di stato dell'unità disco ha la forma `NN,MESSAGGIO,TT,SS`: `NN` è il codice dell'errore, `MESSAGGIO` una stringa descrittiva, `TT` e `SS` di norma la traccia e il settore in cui è avvenuto l'errore (in alcuni casi hanno un altro significato). Senza errori il messaggio è `00,OK,00,00`. Le subroutine che lo leggono lo scrivono in `STACK`, la base della pagina dello stack, terminato da `$00`: è sovrascritto a ogni chiamata, quindi il chiamante lo usa subito (per esempio con STROUT o con `DECODE_DISK_STATUS`).
-
-Il flag di Carry dice se l'operazione è riuscita (0) o no (1), non se l'unità disco ha segnalato un errore: per saperlo si decodifica il messaggio di stato con `DECODE_DISK_STATUS`.
-
-Le subroutine aprono e chiudono da sé i file logici che usano: il file logico 15 (`DISK_STATUS`) e il file logico 88 (`DISK_DIRECTORY` e `DISK_COMMAND`).
-
-<a id="utilita-disk_status"></a>
-### DISK_STATUS
-
-Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15, indirizzo secondario 15) e lo scrive in `STACK`, terminato da `$00` al posto del ritorno a capo che lo chiude. Se il canale non si apre, `STACK` non viene scritto.
-
-| Voce | Contenuto |
-|---|---|
-| Input | `.A`: numero dell'unità disco |
-| Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`<br>Carry: 0 = messaggio letto; 1 = canale non aperto |
-| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
-
-[↑ Torna al contenuto](#contenuto)
-
-<a id="utilita-decode_disk_status"></a>
-### DECODE_DISK_STATUS
-
-Decodifica il messaggio di stato già presente in `STACK` (scritto da `DISK_STATUS`) e restituisce in binario, da 0 a 99, i tre numeri che contiene. Non legge dall'unità disco e non altera il messaggio. Il controllo del formato è minimo: la decodifica si ferma al primo carattere diverso da quello previsto, e in quel caso `.A`, `.X` e `.Y` sono indefiniti.
-
-| Voce | Contenuto |
-|---|---|
-| Input | `STACK` (fino a 40 byte): messaggio di stato terminato da `$00` |
-| Output | `.A`: codice dell'errore (`NN`; 0 = nessun errore)<br>`.X`: primo numero dopo il messaggio (`TT`)<br>`.Y`: secondo numero dopo il messaggio (`SS`)<br>Carry: 0 = messaggio decodificato; 1 = formato non valido |
-| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
-
-[↑ Torna al contenuto](#contenuto)
-
-<a id="utilita-disk_directory"></a>
-### DISK_DIRECTORY
-
-Stampa la directory del disco, una voce per linea: la lunghezza in blocchi, uno spazio e il nome. I caratteri si stampano con `__PUT_CHAR`.
-
-I file da elencare si scelgono con un pattern, una stringa terminata da `$00` puntata da `INDEX` (per esempio `"$0"`). Un pattern nullo o più lungo di 40 caratteri è un errore: la subroutine esce subito con il Carry a 1 senza stampare nulla. Altrimenti il pattern passa al sistema operativo dell'unità senza altri controlli, e un pattern non valido produce un errore dell'unità.
-
-In caso di errore dell'unità la subroutine va a capo, stampa il messaggio di stato (letto con `DISK_STATUS`) ed esce con il Carry a 1. La stampa dei numeri e del messaggio usa LINPRT e STROUT del BASIC, che alterano proprie celle di lavoro (tra cui FAC): il loro contenuto non è garantito dopo la chiamata.
-
-| Voce | Contenuto |
-|---|---|
-| Input | `.A`: numero dell'unità disco<br>`INDEX` (2 byte, ZP): puntatore al pattern, terminato da `$00` |
-| Output | Carry: 0 = directory stampata; 1 = pattern errato, canale non aperto o errore dell'unità |
-| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
-| Richiede | `__USE_DISK_STATUS = 1` |
-
-[↑ Torna al contenuto](#contenuto)
-
-<a id="utilita-disk_command"></a>
-### DISK_COMMAND
-
-Invia un comando DOS all'unità disco e ne legge la risposta con `DISK_STATUS`. Il comando è una stringa terminata da `$00` puntata da `INDEX`: non può essere vuoto né superare i 40 caratteri (il DOS dell'unità tronca un comando più lungo, con risultati imprevedibili). Un comando non valido non viene inviato e la subroutine esce con il Carry a 1.
-
-Se il canale comandi non si apre, il comando non parte e `STACK` non viene scritto. Se invece non si riesce a leggere lo stato, il comando è comunque partito, ma il Carry vale 1 e `STACK` non viene scritto.
-
-| Voce | Contenuto |
-|---|---|
-| Input | `.A`: numero dell'unità disco<br>`INDEX` (2 byte, ZP): puntatore al comando, terminato da `$00` |
-| Output | `STACK` (fino a 256 byte): messaggio di stato terminato da `$00`, non scritto se il comando non è inviato<br>Carry: 0 = comando inviato; 1 = errore (comando vuoto o più lungo di 40 caratteri, canale non aperto o stato non letto) |
-| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` |
-| Richiede | `__USE_DISK_STATUS = 1` |
-
-[↑ Torna al contenuto](#contenuto)
-
-<a id="modulo-keyboard_tools"></a>
-## keyboard_tools.asm
-
-Lettura diretta della tastiera dalla matrice del CIA #1, senza passare dal Kernal. Deriva da quella del gioco Platoon, accorciata e con la serie storica integrata.
-
-Requisiti di pagina zero: `__KBD_HISTORY`.
-
-<a id="utilita-keyscan"></a>
-### KEYSCAN
-
-Verifica se un tasto, indicato dal suo codice tastiera, è stato appena premuto. Non cerca quale tasto sia premuto: il codice tastiera è un dato in ingresso ([Nota #01](#nota-keyboard_tools-01)). Il codice tastiera è la posizione del tasto nella matrice, cioè la riga per 8 più la colonna (simboli `KBD_*` di `c64/keyboard.asm`, da `$00` a `$3F`); un codice da `KBD_NO_KEY` in su non è valido.
-
-Legge la matrice direttamente dal CIA #1 e presuppone che i registri di direzione delle sue due porte abbiano i valori predefiniti (`$FF` e `$00`). La serie storica `__KBD_HISTORY` è un solo byte, condiviso da tutti i tasti ([Nota #02](#nota-keyboard_tools-02)): contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio. Il chiamante la azzera prima del primo uso.
-
-Il Carry a 1 segnala un codice tastiera non valido o il falso tasto, cioè l'interferenza del joystick. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Esempi d'uso nelle note [Nota #03](#nota-keyboard_tools-03), [Nota #04](#nota-keyboard_tools-04) e [Nota #05](#nota-keyboard_tools-05).
-
-| Voce | Contenuto |
-|---|---|
-| Input | `.A`: codice tastiera del tasto da scansionare<br>`__KBD_HISTORY` (1 byte, ZP): serie storica, da azzerare prima del primo uso |
-| Output | `__KBD_HISTORY`: serie storica aggiornata<br>Negative: 0 = tasto non premuto; 1 = tasto premuto (nuova pressione o tenuto). Indefinito se Carry = 1<br>Zero: 0 = nuova pressione; 1 = tasto non premuto o ancora tenuto. Indefinito se Carry = 1<br>Carry: 0 = lettura valida; 1 = falso tasto o codice tastiera non valido |
-| Registri Modificati | `.A`, `.P` (Negative, Zero, Carry), `CIAPRA`, `CIAPRB`, `__KBD_HISTORY` |
-
-[↑ Torna al contenuto](#contenuto)
-
-### Note d'uso di `keyboard_tools.asm`
-
-<a id="nota-keyboard_tools-01"></a>
-#### Nota #01
-
-`KEYSCAN` non cerca quale tasto sia premuto e non restituisce il codice tastiera di un tasto: fa l'inverso. Riceve il codice tastiera di un tasto e verifica se quel tasto è stato appena premuto. Non è adatta a scoprire quale tasto sia premuto tra tutti, perché non scansiona l'intera matrice.
-
-`KEYSCAN` controlla un tasto per volta e va chiamata a ogni passaggio di lettura. Segnala una nuova pressione una sola volta: finché il tasto resta premuto, le chiamate successive non riportano niente di nuovo. Un codice tastiera non valido (da `KBD_NO_KEY` in su) è un errore, come il falso tasto. Con il Carry a 0, il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Gli esempi sono nelle note da [Nota #03](#nota-keyboard_tools-03) in poi.
-
-<a id="nota-keyboard_tools-02"></a>
-#### Nota #02
-
-La serie storica, la cella in pagina zero `__KBD_HISTORY`, è un solo byte, condiviso da tutti i tasti: finché il tasto resta premuto contiene la sola colonna, non la riga, e al rilascio viene azzerata. Il chiamante la azzera prima del primo uso. Quindi si controlla un tasto per volta: se nello stesso passaggio si scansionano tasti diversi, le chiamate si disturbano a vicenda e `KEYSCAN` segnala una nuova pressione a ogni passaggio finché uno dei tasti resta premuto. Due tasti della stessa colonna, poi, non si distinguono tra loro.
-
-<a id="nota-keyboard_tools-03"></a>
-#### Nota #03
-
-Uso base: una scansione a ogni passaggio, per esempio dentro un gestore IRQ. Il Carry a 1 segnala un errore, il flag di Zero a 0 una nuova pressione. Esempio:
-
-```
-  lda #KBD_SPACE                ; Tasto da scansionare.
-  jsr KEYSCAN
-  bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
-
-  beq .Exit_Handler             ; Nessuna nuova pressione.
-
-  inc EXTCOL                    ; Nuova pressione: cambia il bordo.
-
-.Exit_Handler:
-  rts
-```
-
-<a id="nota-keyboard_tools-04"></a>
-#### Nota #04
-
-Debouncing. I contatti della tastiera rimbalzano per qualche millisecondo, sia premendo sia rilasciando il tasto. Il flag di Negative dice se il tasto è ancora premuto: una nuova pressione si conferma al passaggio successivo, e se il tasto non è più premuto era solo un rimbalzo. Lo snippet è per un gestore IRQ chiamato a ogni fotogramma, e `_CANDIDATE` è una cella di RAM del programma, azzerata all'avvio. Esempio:
-
-```
-  lda #KBD_SPACE                ; Tasto da scansionare.
-  jsr KEYSCAN
-  bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
-
-  bpl .Clear_Candidate          ; Il tasto non è premuto.
-
-  beq .Check_Candidate          ; Il tasto è tenuto.
-
-  lda #1                        ; Nuova pressione: la conferma
-  sta _CANDIDATE                ; arriva al prossimo passaggio.
-  rts
-
-.Clear_Candidate:
-  lda #0                        ; Rimbalzo o rilascio: annulla
-  sta _CANDIDATE                ; la pressione in attesa.
-  rts
-
-.Check_Candidate:
-  lda _CANDIDATE                ; C'è una pressione da confermare?
-
-  beq .Exit_Handler             ; No: il tasto è tenuto da prima.
-
-  lda #0                        ; Sì: la pressione è confermata.
-  sta _CANDIDATE
-
-  inc EXTCOL                    ; Cambia il bordo.
-
-.Exit_Handler:
-  rts
-```
-
-<a id="nota-keyboard_tools-05"></a>
-#### Nota #05
-
-Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pressione, il secondo attende il rilascio: finché il tasto resta premuto il flag di Negative vale 1. Lo snippet è per il programma principale e non per un gestore IRQ, perché i cicli non cedono mai il controllo. Esempio:
-
-```
-.Loop_Scan_Press:
-  lda #KBD_SPACE                ; REPEAT
-  jsr KEYSCAN
-  bcs .Loop_Scan_Press          ; Falso tasto: riprova.
-
-.Loop_Check_Press:
-  beq .Loop_Scan_Press          ; REPEAT UNTIL: nuova pressione
-
-  inc EXTCOL                    ; Tasto premuto: cambia il bordo.
-
-.Loop_Poll_Release:
-  lda #KBD_SPACE                ; REPEAT
-  jsr KEYSCAN
-  bcs .Loop_Poll_Release        ; Falso tasto: riprova.
-
-.Loop_Check_Release:
-  bmi .Loop_Poll_Release        ; REPEAT UNTIL: tasto non premuto
-```
-
-[↑ Torna al contenuto](#contenuto)
+| `__C128_C64_MODE` | `KEYSCAN` | `0` | Registri e codici extra del C128 (1: da includere) |
+| `__BG_COL` | `ASC_ECM`, `ASC_ECM_C`, `ECM_SCR`, `ECM_SCR_C`, `ECM_PET`, `ECM_PET_C`, `ECM_ASC`, `ECM_ASC_C`, `PET_ECM`, `PET_ECM_C`, `SCR_ECM`, `SCR_ECM_C`, `PLOT_CHAR`, `m_Put_ECM_Char` | `$03` | Cella in ZP: selettore del colore di sfondo ECM (0-3) |
+| `__KBD_HISTORY` | `KEYSCAN` | `$05` | Cella in ZP: serie storica di KEYSCAN |
+| `__PUT_CHAR` | `DISK_DIRECTORY`, `PRINT_MSG`, `PRINT_NTH`, `PRINT_RAW`, `PRINT_IMM`, `m_Put_ECM_Char` | `$FFD2` | Subroutine di stampa di un carattere (CHROUT) |
 
 <a id="modulo-chars"></a>
 ## chars.asm
@@ -834,12 +660,423 @@ I controlli ASCII da 0 a 31 e il DEL (127) non hanno un glifo, e anche qui la sc
 
 [↑ Torna al contenuto](#contenuto)
 
+<a id="modulo-disk_tools"></a>
+## disk_tools.asm
+
+Utilità per la gestione delle unità disco.
+
+<a id="utilita-disk_status"></a>
+### DISK_STATUS
+
+Legge il messaggio di stato dell'unità disco dal canale comandi (file logico 15, indirizzo secondario 15) e lo scrive in `STACK`, la base della pagina dello stack, terminato da `$00`: il carattere di ritorno a capo (`$0D`) che chiude il messaggio è sostituito dallo zero finale. Il messaggio occupa al massimo 256 byte ed è sovrascritto a ogni chiamata, quindi il chiamante lo usa subito (per esempio con `STROUT`). Se il canale non si apre il buffer non viene scritto.
+
+Il flag di Carry dice solo se il messaggio è stato letto, non se il disco ha segnalato un errore: per estrarne il codice si usa `DECODE_DISK_STATUS`.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Numero dell'unità disco |
+| Output | `STACK` (fino a 256 byte, RAM): Messaggio di stato terminato da `$00`<br>Carry (1 bit, .P): 0 = messaggio letto; 1 = canale non aperto |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` (fino a 256 byte) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-decode_disk_status"></a>
+### DECODE_DISK_STATUS
+
+Decodifica il messaggio di stato dell'unità disco contenuto in `STACK` (scritto da `DISK_STATUS`) e restituisce il codice dell'errore e gli altri due numeri del messaggio. Il messaggio ha la forma "NN,`MESSAGGIO`,TT,SS", dove le virgole fanno parte del messaggio e le virgolette no: NN è il codice dell'errore, `MESSAGGIO` una stringa descrittiva, TT e SS di norma la traccia e il settore in cui è avvenuto l'errore (in alcuni casi hanno un altro significato). Senza errori il messaggio è "00,OK,00,00". I tre numeri hanno due cifre e si restituiscono in binario, da 0 a 99. Il messaggio non viene alterato e non supera i 40 caratteri: la ricerca della virgola che precede TT si ferma alla quarantesima posizione.
+
+Il controllo del formato è minimo: la decodifica si ferma al primo carattere diverso da quello previsto e in quel caso `.A`, `.X` e `.Y` sono indefiniti. Il flag di Carry dice solo se il messaggio è stato decodificato, non se il disco ha segnalato un errore: per saperlo il chiamante guarda `.A` (0 = nessun errore).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `STACK` (fino a 40 byte, RAM): Messaggio di stato terminato da `$00` |
+| Output | `.A` (1 byte, CPU): Codice dell'errore (NN)<br>`.X` (1 byte, CPU): Primo numero dopo il messaggio (TT)<br>`.Y` (1 byte, CPU): Secondo numero dopo il messaggio (SS)<br>Carry (1 bit, .P): 0 = messaggio decodificato; 1 = formato non valido |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
+| Assembla anche | `DISK_GET_NUMBER` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-disk_directory"></a>
+### DISK_DIRECTORY
+
+Stampa la directory del disco dell'unità indicata, una voce per linea: la lunghezza in blocchi, uno spazio e il nome. Apre un canale dati (file logico 88, indirizzo secondario 0), legge la directory come un programma e stampa ogni linea con `__PUT_CHAR`.
+
+I file da elencare si scelgono con un pattern: una stringa terminata da `$00` puntata da `INDEX` (per esempio "`$0`"). La subroutine ne calcola la lunghezza e lo passa al sistema operativo dell'unità senza altri controlli: un pattern nullo o più lungo di 40 caratteri è un errore, e la subroutine esce subito con il Carry a 1 senza stampare nulla. Un pattern non valido per l'unità produce invece un errore dell'unità, trattato come ogni altro.
+
+Il flag di Carry è l'esito: se si verifica un errore dell'unità la subroutine va a capo, stampa il messaggio di stato dell'unità (letto con `DISK_STATUS`) ed esce con il Carry a 1. La stampa dei numeri e del messaggio usa `LINPRT` e `STROUT` del BASIC, che alterano proprie celle di lavoro (tra cui `FAC`): il loro contenuto non è garantito dopo la chiamata.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Numero dell'unità disco<br>`INDEX` (2 byte, ZP): Puntatore al pattern, terminato da `$00` |
+| Output | Carry (1 bit, .P): 0 = directory stampata; 1 = pattern errato, canale non aperto o errore dell'unità |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` (fino a 256 byte) |
+| Richiede | `__USE_DISK_STATUS = 1` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-disk_command"></a>
+### DISK_COMMAND
+
+Invia un comando `DOS` all'unità disco indicata. Il comando è una stringa terminata da `$00` puntata da `INDEX` e non può essere vuoto né superare i 40 caratteri: il `DOS` dell'unità tronca un comando più lungo, con risultati imprevedibili. La subroutine rifiuta un comando non valido senza inviarlo ed esce con il Carry a 1.
+
+Il comando si invia aprendo il canale comandi (indirizzo secondario 15) con la stringa come nome del file: l'`OPEN` è tutto ciò che serve. Il file logico non può essere il 15, perché `DISK_STATUS` apre per conto suo il file logico 15 e l'`OPEN` fallirebbe se fosse già aperto: la subroutine usa il file logico 88, lo stesso di `DISK_DIRECTORY`, e lo chiude dopo la lettura dello stato.
+
+Il messaggio di stato con cui il `DOS` risponde al comando si legge con `DISK_STATUS` e si scrive in `STACK`, terminato da `$00`: occupa al massimo 256 byte e il chiamante lo usa subito (per esempio con `STROUT`, o con `DECODE_DISK_STATUS` per ricavarne il codice dell'errore). Il flag di Carry dice solo se il comando è stato inviato e lo stato letto, non se l'unità ha segnalato un errore. Se il canale comandi non si apre il comando non parte e `STACK` non viene scritto. Se invece non si riesce a leggere lo stato, il comando è comunque partito ma il Carry vale 1 e `STACK` non viene scritto.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Numero dell'unità disco<br>`INDEX` (2 byte, ZP): Puntatore al comando, terminato da `$00` |
+| Output | `STACK` (fino a 256 byte, RAM): Messaggio di stato terminato da `$00`, non scritto se il comando non è inviato<br>Carry (1 bit, .P): 0 = comando inviato; 1 = errore (comando vuoto o più lungo di 40 caratteri, canale non aperto o stato non letto) |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `STACK` (fino a 256 byte) |
+| Richiede | `__USE_DISK_STATUS = 1` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="modulo-keyboard_tools"></a>
+## keyboard_tools.asm
+
+Lettura diretta della tastiera dalla matrice del CIA #1, senza passare dal Kernal. Deriva da quella del gioco Platoon, accorciata e con la serie storica integrata.
+
+Requisiti di pagina zero: `__KBD_HISTORY`.
+
+Note d'uso del modulo: [Nota #01](#nota-keyboard_tools-01), [Nota #02](#nota-keyboard_tools-02), [Nota #03](#nota-keyboard_tools-03), [Nota #04](#nota-keyboard_tools-04), [Nota #05](#nota-keyboard_tools-05).
+
+<a id="utilita-keyscan"></a>
+### KEYSCAN
+
+Verifica se un tasto, indicato dal suo codice tastiera, è stato appena premuto. Legge la matrice della tastiera direttamente dal CIA #1 e presuppone che i registri di direzione delle sue due porte abbiano i valori predefiniti (`$FF` e `$00`).
+
+Non cerca il tasto premuto e non ne restituisce il codice tastiera: il codice tastiera è un dato in ingresso.
+
+Un codice tastiera da `KEYCODE_NO_KEY` in su non è valido: la subroutine esce subito con il Carry a 1, senza toccare le porte.
+
+Il codice tastiera è la posizione del tasto nella matrice, cioè la riga per 8 più la colonna (`KEYCODE_*`, da `$00` a `$3F`). La serie storica, `__KBD_HISTORY`, è un solo byte: contiene la maschera della colonna finché il tasto resta premuto e vale zero dopo il rilascio.
+
+Il Carry segnala il falso tasto: la colonna risulta bassa anche senza nessuna riga selezionata, quindi la causa è l'interferenza del joystick e non la tastiera. Con il Carry a 0 il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice tastiera del tasto da scansionare<br>`__KBD_HISTORY` (1 byte, ZP): Serie storica, da azzerare prima del primo uso |
+| Output | `__KBD_HISTORY` (1 byte, ZP): Serie storica aggiornata<br>Negative (1 bit, .P): 0 = tasto non premuto; 1 = tasto premuto (nuova pressione o tenuto). Indefinito se Carry = 1<br>Zero (1 bit, .P): 0 = nuova pressione; 1 = tasto non premuto o ancora tenuto. Indefinito se Carry = 1<br>Carry (1 bit, .P): 0 = lettura valida; 1 = falso tasto o codice tastiera non valido |
+| Registri Modificati | `.A`, `.P` (Negative, Zero, Carry), `CIAPRA`, `CIAPRB`, `__KBD_HISTORY` |
+
+[↑ Torna al contenuto](#contenuto)
+
+### Note d'uso di `keyboard_tools.asm`
+
+<a id="nota-keyboard_tools-01"></a>
+#### Nota #01
+
+`KEYSCAN` non cerca quale tasto sia premuto e non restituisce il codice tastiera di un tasto: fa l'inverso. Riceve il codice tastiera di un tasto e verifica se quel tasto è stato appena premuto. Non è adatta a scoprire quale tasto sia premuto tra tutti, perché non scansiona l'intera matrice.
+
+`KEYSCAN` controlla un tasto per volta e va chiamata a ogni passaggio di lettura. Segnala una nuova pressione una sola volta: finché il tasto resta premuto, le chiamate successive non riportano niente di nuovo. Un codice tastiera non valido (da `KEYCODE_NO_KEY` in su) è un errore, come il falso tasto. Con il Carry a 0, il flag di Negative dice se il tasto è premuto e il flag di Zero se la pressione è nuova. Gli esempi sono nelle note da [Nota #03](#nota-keyboard_tools-03) in poi.
+
+<a id="nota-keyboard_tools-02"></a>
+#### Nota #02
+
+La serie storica, la cella in pagina zero `__KBD_HISTORY`, è un solo byte, condiviso da tutti i tasti: finché il tasto resta premuto contiene la sola colonna, non la riga, e al rilascio viene azzerata. Il chiamante la azzera prima del primo uso. Quindi si controlla un tasto per volta: se nello stesso passaggio si scansionano tasti diversi, le chiamate si disturbano a vicenda e `KEYSCAN` segnala una nuova pressione a ogni passaggio finché uno dei tasti resta premuto. Due tasti della stessa colonna, poi, non si distinguono tra loro.
+
+<a id="nota-keyboard_tools-03"></a>
+#### Nota #03
+
+Uso base: una scansione a ogni passaggio, per esempio dentro un gestore IRQ. Il Carry a 1 segnala un errore, il flag di Zero a 0 una nuova pressione.
+
+```
+Esempio:
+
+  lda #KEYCODE_SPACE            ; Tasto da scansionare.
+  jsr KEYSCAN
+  bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
+
+  beq .Exit_Handler             ; Nessuna nuova pressione.
+
+  inc EXTCOL                    ; Nuova pressione: cambia il bordo.
+
+.Exit_Handler:
+  rts
+```
+
+<a id="nota-keyboard_tools-04"></a>
+#### Nota #04
+
+Debouncing. I contatti della tastiera rimbalzano per qualche millisecondo, sia premendo sia rilasciando il tasto. Il flag di Negative dice se il tasto è ancora premuto: una nuova pressione si conferma al passaggio successivo, e se il tasto non è più premuto era solo un rimbalzo. Lo snippet è per un gestore IRQ chiamato a ogni fotogramma, e _CANDIDATE è una cella di RAM del programma, azzerata all'avvio. Esempio:
+
+```
+  lda #KEYCODE_SPACE            ; Tasto da scansionare.
+  jsr KEYSCAN
+  bcs .Exit_Handler             ; Falso tasto: ignora la lettura.
+
+  bpl .Clear_Candidate          ; Il tasto non è premuto.
+
+  beq .Check_Candidate          ; Il tasto è tenuto.
+
+  lda #1                        ; Nuova pressione: la conferma
+  sta _CANDIDATE                ; arriva al prossimo passaggio.
+  rts
+
+.Clear_Candidate:
+  lda #0                        ; Rimbalzo o rilascio: annulla
+  sta _CANDIDATE                ; la pressione in attesa.
+  rts
+
+.Check_Candidate:
+  lda _CANDIDATE                ; C'è una pressione da confermare?
+
+  beq .Exit_Handler             ; No: il tasto è tenuto da prima.
+
+  lda #0                        ; Sì: la pressione è confermata.
+  sta _CANDIDATE
+
+  inc EXTCOL                    ; Cambia il bordo.
+
+.Exit_Handler:
+  rts
+```
+
+<a id="nota-keyboard_tools-05"></a>
+#### Nota #05
+
+Attesa della pressione e del rilascio. Il primo ciclo attende una nuova pressione, il secondo attende il rilascio: finché il tasto resta premuto il flag di Negative vale 1. Lo snippet è per il programma principale e non per un gestore IRQ, perché i cicli non cedono mai il controllo. Esempio:
+
+```
+.Loop_Scan_Press:
+  lda #KEYCODE_SPACE            ; REPEAT
+  jsr KEYSCAN
+  bcs .Loop_Scan_Press          ; Falso tasto: riprova.
+
+.Loop_Check_Press:
+  beq .Loop_Scan_Press          ; REPEAT UNTIL: nuova pressione
+
+  inc EXTCOL                    ; Tasto premuto: cambia il bordo.
+
+.Loop_Poll_Release:
+  lda #KEYCODE_SPACE            ; REPEAT
+  jsr KEYSCAN
+  bcs .Loop_Poll_Release        ; Falso tasto: riprova.
+
+.Loop_Check_Release:
+  bmi .Loop_Poll_Release        ; REPEAT UNTIL: tasto non premuto
+```
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="modulo-print_tools"></a>
+## print_tools.asm
+
+Utilità per la stampa di caratteri, messaggi e tabelle di messaggi con supporto per il modo a Colore di Sfondo Esteso.
+
+Requisiti di pagina zero: `__BG_COL`.
+
+Note d'uso del modulo: [Nota #01](#nota-print_tools-01), [Nota #02](#nota-print_tools-02), [Nota #03](#nota-print_tools-03).
+
+<a id="utilita-m_at"></a>
+### m_At
+
+Chiamata: `+m_At .row_, .col_`
+
+Posiziona il cursore sulla riga e sulla colonna specificata dello schermo corrente, usando la chiamata `PLOT` del Kernal.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.row_` (1 byte, Macro): Riga (0-24)<br>`.col_` (1 byte, Macro): Colonna (0-39) |
+| Output | Nessuno |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-plot_char"></a>
+### PLOT_CHAR
+
+Scrive un carattere sullo schermo alla riga e colonna specificate e supporta in modo trasparente il modo Colore di Sfondo Esteso. Se questo modo è attivo il codice Schermo del carattere è automaticamente riportato all'intervallo 0-63 e viene scritto utilizzando il registro colore che è codificato in `__BG_COL`:
+
+```
+__BG_COL = 0: Usa il colore memorizzato in BGCOL0
+__BG_COL = 1: Usa il colore memorizzato in BGCOL1
+__BG_COL = 2: Usa il colore memorizzato in BGCOL2
+__BG_COL = 3: Usa il colore memorizzato in BGCOL3
+```
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice Schermo del carattere<br>`.X` (1 byte, CPU): Colonna della cella (0-39)<br>`.Y` (1 byte, CPU): Riga della cella (0-24)<br>`__BG_COL` (1 byte, ZP): Selettore del registro di sfondo (0-3), solo in ECM |
+| Output | `Cella` (1 byte, RAM): Cella dello schermo alla riga e colonna indicate |
+| Registri Modificati | `.P` (Negative, oVerflow, Zero, Carry), `INDEX2` |
+| Richiede | `__USE_COMPUTE_CELL_ADDRESS = 1` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-color_char"></a>
+### COLOR_CHAR
+
+Imposta il colore di primo piano del carattere localizzato alla colonna ed alla riga specificati.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice del colore (0-15)<br>`.X` (1 byte, CPU): Colonna della cella (0-39)<br>`.Y` (1 byte, CPU): Riga della cella (0-24) |
+| Output | `Cella` (1 byte, RAM): Cella della memoria colore indicata da `.X` e `.Y` |
+| Registri Modificati | `.P` (Negative, oVerflow, Zero, Carry), `INDEX2` |
+| Richiede | `__USE_COMPUTE_CELL_ADDRESS = 1` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-print_msg"></a>
+### PRINT_MSG
+
+`PRINT_MSG` percorre attraverso chiamate successive una tavola di messaggi [Nota #01](#nota-print_tools-01). L'indirizzo iniziale della tavola è dato da un puntatore in ZP e l'indirizzo del puntatore è fornito in `.A`: alla prima chiamata viene stampato il primo messaggio: in caso di successo il flag di Carry è uguale a zero ed il puntatore in ZP incrementato all'inizio del messaggio successivo. Il raggiungimento della fine della tavola è segnalato da Carry = 1: successive chiamate non avranno effetto finché il puntatore non viene reinizializzato all'indirizzo iniziale della tavola.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Indirizzo in ZP del puntatore alla tavola<br>`Puntatore` (2 byte, ZP): Indirizzo del prossimo messaggio da stampare |
+| Output | `Puntatore` (2 byte, ZP): Messaggio successivo o marcatore di fine tavola<br>Carry (1 bit, .P): 0 = messaggio stampato; 1 = tavola terminata |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), puntatore in ZP |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-print_nth"></a>
+### PRINT_NTH
+
+`PRINT_NTH` stampa un messaggio singolo estraendolo da una tavola di messaggi [Nota #01](#nota-print_tools-01). L'indirizzo iniziale della tavola è dato da un puntatore in ZP e l'indirizzo del puntatore è fornito in `.A` mentre il numero d'ordine del messaggio è fornito in `.Y` (il primo messaggio ha indice 0).
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Indirizzo in ZP del puntatore alla tavola<br>`.Y` (1 byte, CPU): Indice del messaggio (0 = il primo)<br>`Puntatore` (2 byte, ZP): Indirizzo iniziale della tavola |
+| Output | Carry (1 bit, .P): 0 = messaggio stampato; 1 = indice oltre la fine |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry) |
+| Richiede | `__USE_PRINT_MSG = 1` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-print_raw"></a>
+### PRINT_RAW
+
+La subroutine `PRINT_RAW` stampa una stringa di testo il cui indirizzo è puntato da `.YA`: è pensata come sostituto della subroutine di sistema `STROUT` in quanto non altera il contenuto di `FAC` o `ARG`. Per mantenere la compatibilità con `STROUT` questa è l'unica subroutine di stampa che non supporta i due byte di posizionamento sullo schermo che precedono il messaggio.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Byte basso dell'indirizzo della stringa<br>`.Y` (1 byte, CPU): Byte alto dell'indirizzo della stringa |
+| Output | Nessuno |
+| Registri Modificati | `.A`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `INDEX2` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-print_imm"></a>
+### PRINT_IMM
+
+La subroutine `PRINT_IMM` stampa un messaggio (formattato come un elemento di una tavola di messaggi [Nota #01](#nota-print_tools-01)) inserito nel codice sorgente immediatamente dopo la sua chiamata:
+
+```
+jsr PRINT_IMM
+!text $FF, $00, "Hello, world!", $0D, $00
+```
+
+| Voce | Contenuto |
+|---|---|
+| Input | `Messaggio` (n byte, RAM): Dati dopo la chiamata (vedi [Nota #01](#nota-print_tools-01)) |
+| Output | Nessuno |
+| Registri Modificati | `.A`, `.X`, `.Y`, `.P` (Negative, oVerflow, Zero, Carry), `INDEX2` |
+
+[↑ Torna al contenuto](#contenuto)
+
+<a id="utilita-m_put_ecm_char"></a>
+### m_Put_ECM_Char
+
+Questa macro non è pensata per essere usata a sé stante, ma come mattone da costruzione per un proprio driver di stampa da utilizzare nel punto di configurazione `__PUT_CHAR` [Nota #02](#nota-print_tools-02): infatti la macro non termina con un RTS ma con un salto alla fine del suo codice in modo da poter essere concatenata con altre istruzioni [Nota #02](#nota-print_tools-02). Nello specifico questa macro implementa la logica per stampare a schermo un carattere PETSCII in modo ECM con il colore di sfondo desiderato. La macro si aspetta in `.A` il codice PETSCII del carattere da stampare e restituisce `.A`, `.X` e `.Y` invariati.
+
+I codici di controllo (0-31 e 128-159) sono trattati così: 0, 18 (`{RVS}` ON) e 146 (`{RVS}` OFF) sono ignorati, perché il modo reverse è deciso da `__BG_COL`; quattro codici PETSCII non utilizzati dal sistema operativo (1-4) sono reinterpretati come codici di controllo che, come gli altri, hanno effetto fino al loro cambiamento: essi sono `ECM_BG`[0-3] e selezionano il registro del VIC-II contenente il colore di sfondo da utilizzare, senza stampare nulla [Nota #03](#nota-print_tools-03); tutti gli altri sono inviati a `CHROUT` senza modifiche.
+
+Gli altri codici PETSCII sono stampabili. Il codice è normalizzato, cioè portato nell'intervallo 32-95 in cui il modo ECM ha i suoi glifi, sostituendo i 3 bit più significativi secondo la tabella `.NORM_TABLE` (con la macro `m_Apply_Table` di `<io/chars.asm>`). Non è una transcodifica nel senso di `<io/chars.asm>`, che conserva il glifo: in modo ECM il VIC-II ignora i due bit più significativi del codice Schermo, quindi la normalizzazione dà il codice il cui glifo è quello che l'hardware mostrerebbe comunque. Per esempio il pigreco (255) è stampato come la freccia in su: il suo codice 255 diventa 94, e questo caso, che la tabella non copre, è trattato a parte con la macro `m_Scan_Exceptions`. Poi il bit #0 di `__BG_COL` è copiato nel bit #7 del codice normalizzato e il bit #1 di `__BG_COL` decide il modo reverse (`RVS` = 0 normale, 1 inverso); il codice è infine inviato a `CHROUT`. `__BG_COL` non cambia.
+
+| Voce | Contenuto |
+|---|---|
+| Input | `.A` (1 byte, CPU): Codice PETSCII da stampare<br>`__BG_COL` (1 byte, ZP): Selettore del colore di sfondo (0-3) |
+| Output | `__BG_COL` (1 byte, ZP): Nuovo selettore (se il codice è `ECM_BG`[0-3])<br>`RVS` (1 byte, ZP): Modo reverse (bit #1 di `__BG_COL`), se il codice è stampabile |
+| Registri Modificati | `.P` (Negative, oVerflow, Zero, Carry), `__BG_COL`, `RVS` |
+
+[↑ Torna al contenuto](#contenuto)
+
+### Note d'uso di `print_tools.asm`
+
+<a id="nota-print_tools-01"></a>
+#### Nota #01
+
+Le subroutine `PRINT_MSG` e `PRINT_NTH` lavorano su elenchi di messaggi organizzati in tavole. Ciascun messaggio è organizzato nel seguente formato:
+
+```
+  !text <riga>, <colonna>, "messaggio", $00
+```
+
+`<riga>` e `<colonna>` sono due byte che indicano la posizione sullo schermo alla quale andrà stampato il messaggio.
+
+Se `<riga>` == `$FF` e `<colonna>` != `$FF` il messaggio è stampato alla posizione corrente del cursore.
+
+Se `<riga>` == `$FF` e `<colonna>` == `$FF` la tavola è terminata.
+
+<a id="nota-print_tools-02"></a>
+#### Nota #02
+
+Le subroutine `PRINT_*` possono essere personalizzate con una propria subroutine di stampa (il driver), assegnando la sua etichetta al punto di personalizzazione `__PUT_CHAR` in config.asm, per esempio `__PUT_CHAR` = `PUT_CHAR_ECM`.
+
+Esempio 1: Driver di stampa in modo ECM.
+
+```
+PUT_CHAR_ECM:
+  +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
+
+.Exit_PUT_CHAR_ECM:
+  rts
+```
+
+Esempio 2: Driver di stampa in modo ECM a doppia spaziatura.
+
+```
+PUT_CHAR_ECM_WIDE:
+  +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
+  lda #PETSCII_CURSOR_RIGHT     ; Codice PETSCII per spostare il cursore
+                                ; a destra di una posizione
+  jsr CHROUT
+
+.Exit_PUT_CHAR_ECM_WIDE:
+  rts
+```
+
+Esempio 3: Driver di stampa in verticale.
+
+```
+PUT_CHAR_VERTICAL:
+  jsr CHROUT                    ; Stampa il carattere
+
+  lda #PETSCII_CURSOR_DOWN      ; Codice PETSCII per spostare il cursore
+                                ; in basso di una posizione
+  jsr CHROUT
+  lda #PETSCII_CURSOR_LEFT      ; Codice PETSCII per spostare il cursore
+                                ; a sinistra di una posizione
+  jsr CHROUT
+
+.Exit_PUT_CHAR_VERTICAL:
+  rts
+```
+
+<a id="nota-print_tools-03"></a>
+#### Nota #03
+
+Esempio di messaggio che utilizza i codici `ECM_BG`[0-3]:
+
+```
+  !text $FF, $00, ECM_BG0, "Hello, ", ECM_BG1, "world!", ECM_BG0, $00
+```
+
+L'ultimo `ECM_BG0` serve a ripristinare il colore di sfondo iniziale altrimenti eventuali messaggi seguenti sarebbero stampati con il colore di sfondo `ECM_BG1`.
+
+[↑ Torna al contenuto](#contenuto)
+
 <a id="limiti-noti"></a>
 ## Limiti noti
 
 - `DISK_COMMAND` non è ancora stato provato con un'unità disco reale.
-- `KEYSCAN` con `__C128_C64_MODE = 1`: `KBD_NO_KEY` vale `$58`, quindi i codici extra del C128 da `$40` a `$57` superano il controllo di validità e la lettura della matrice non ha senso. I tasti extra del C128 si leggono da altre porte e richiedono un ramo dedicato, non ancora scritto.
+- `KEYSCAN` con `__C128_C64_MODE = 1`: `KEYCODE_NO_KEY` vale `$58`, quindi i codici extra del C128 da `$40` a `$57` superano il controllo di validità e la lettura della matrice non ha senso. I tasti extra del C128 si leggono da altre porte e richiedono un ramo dedicato, non ancora scritto.
 - `KEYSCAN` e il joystick nella porta 2: il controllo del falso tasto è costruito sul joystick nella porta 1. L'influenza del joystick nella porta 2, che si legge sulla porta usata per selezionare le righe, non è stata ancora verificata.
 - `KEYSCAN` controlla un tasto per volta e non distingue due tasti della stessa colonna ([Nota #02](#nota-keyboard_tools-02)).
+
+- `PRINT_MSG`, `PRINT_RAW` e `PRINT_IMM` dipendono dai registri di `__PUT_CHAR` (B15): `PRINT_MSG` si aspetta il registro `.X` invariato dopo ogni `jsr __PUT_CHAR`, `PRINT_RAW` e `PRINT_IMM` il registro `.Y`. `CHROUT` li preserva, ma una subroutine di stampa personalizzata no: in quel caso il puntatore in pagina zero (indicizzato con `.X`) o l'indice del loop (`.Y`, che vale 0) verrebbero alterati e la subroutine leggerebbe o scriverebbe nella locazione sbagliata. `PRINT_NTH` dipende da `.X` in modo indiretto, tramite `PRINT_MSG`. Finché non è corretto, la subroutine usata come `__PUT_CHAR` deve preservare `.X` e `.Y` ([Nota #02](#nota-print_tools-02)).
 
 [↑ Torna al contenuto](#contenuto)
