@@ -47,7 +47,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_PET_SCR = 1) {
   !zone Pet_Scr
@@ -81,7 +83,7 @@
       !byte %01100000             ; 224-255 > 96-127
 
     .EXCEPTIONS:
-      !byte $FF, $5E              ; 255 > 94 (pigreco)
+      !byte PETSCII_SHIFT_UP_ARROW, SCREEN_SHIFT_UP_ARROW
 
     .EXCEPTIONS_IMPERFECT:
 
@@ -119,7 +121,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_PET_SCR_C = 1) {
   !zone Pet_Scr_C
@@ -160,7 +164,7 @@
       !byte %01100000             ; 224-255 > 96-127
 
     .EXCEPTIONS:
-      !byte $FF, $5E              ; 255 > 94 (pigreco)
+      !byte PETSCII_SHIFT_UP_ARROW, SCREEN_SHIFT_UP_ARROW
 
     .EXCEPTIONS_IMPERFECT:
 
@@ -215,7 +219,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_PET_ASC = 1) {
   !zone Pet_Asc
@@ -263,43 +269,43 @@
       !byte %11100000             ; 224-255 impossibile
 
     .EXCEPTIONS:
-      !byte $40, $40              ; 64 > 64 (@)
-      !byte $5B, $5B              ; 91 > 91 ([)
-      !byte $5D, $5D              ; 93 > 93 (])
-      !byte $5E, $5E              ; 94 > 94 (^)
-      !byte $60, $7E              ; 96 > 126 (~)
-      !byte $7D, $7C              ; 125 > 124 (|)
-      !byte $A0, $20              ; 160 > 32 (spazio)
-      !byte $A4, $5F              ; 164 > 95 (_)
-      !byte $AB, $7D              ; 171 > 125 (})
-      !byte $AD, $60              ; 173 > 96 (`)
-      !byte $B3, $7B              ; 179 > 123 ({)
-      !byte $BF, $5C              ; 191 > 92 (\)
-      !byte $C0, $7E              ; 192 > 126 (~)
-      !byte $DD, $7C              ; 221 > 124 (|)
-      !byte $E0, $20              ; 224 > 32 (spazio)
-      !byte $E4, $5F              ; 228 > 95 (_)
-      !byte $EB, $7D              ; 235 > 125 (})
-      !byte $ED, $60              ; 237 > 96 (`)
-      !byte $F3, $7B              ; 243 > 123 ({)
+      !byte PETSCII_AT_SIGN, ASCII_AT_SIGN
+      !byte PETSCII_LEFT_BRACKET, ASCII_LEFT_BRACKET
+      !byte PETSCII_RIGHT_BRACKET, ASCII_RIGHT_BRACKET
+      !byte PETSCII_CIRCUMFLEX, ASCII_CIRCUMFLEX
+      !byte PETSCII_TILDE_ALT, ASCII_TILDE
+      !byte PETSCII_VERTICAL_BAR_ALT, ASCII_VERTICAL_BAR
+      !byte PETSCII_SHIFT_SPACE, ASCII_SPACE
+      !byte PETSCII_UNDERSCORE, ASCII_UNDERSCORE
+      !byte PETSCII_RIGHT_CURLY_BRACKET, ASCII_RIGHT_CURLY_BRACKET
+      !byte PETSCII_GRAVE_ACCENT, ASCII_GRAVE_ACCENT
+      !byte PETSCII_LEFT_CURLY_BRACKET, ASCII_LEFT_CURLY_BRACKET
+      !byte PETSCII_BACKSLASH, ASCII_BACKSLASH
+      !byte PETSCII_TILDE, ASCII_TILDE
+      !byte PETSCII_VERTICAL_BAR, ASCII_VERTICAL_BAR
+      !byte PETSCII_SHIFT_SPACE_ALT, ASCII_SPACE
+      !byte PETSCII_UNDERSCORE_ALT, ASCII_UNDERSCORE
+      !byte PETSCII_RIGHT_CURLY_BRACKET_ALT, ASCII_RIGHT_CURLY_BRACKET
+      !byte PETSCII_GRAVE_ACCENT_ALT, ASCII_GRAVE_ACCENT
+      !byte PETSCII_LEFT_CURLY_BRACKET_ALT, ASCII_LEFT_CURLY_BRACKET
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $00, $40              ; 0 > 64 (@, inverso)
-      !byte $1B, $5B              ; 27 > 91 ([, inverso)
-      !byte $1C, $FF              ; 28 > impossibile
-      !byte $1D, $5D              ; 29 > 93 (], inverso)
-      !byte $1E, $5E              ; 30 > 94 (^, inverso)
-      !byte $1F, $FF              ; 31 > impossibile
-      !byte $5C, $FF              ; 92 > impossibile
-      !byte $5F, $FF              ; 95 > impossibile
-      !byte $7B, $FF              ; 123 > impossibile
-      !byte $7C, $FF              ; 124 > impossibile
-      !byte $7E, $FF              ; 126 > impossibile
-      !byte $7F, $FF              ; 127 > impossibile
-      !byte $DB, $FF              ; 219 > impossibile
-      !byte $DC, $FF              ; 220 > impossibile
-      !byte $DE, $FF              ; 222 > impossibile
-      !byte $DF, $FF              ; 223 > impossibile
+      !byte PETSCII_NULL, ASCII_AT_SIGN
+      !byte PETSCII_CTRL_LEFT_BRACKET, ASCII_LEFT_BRACKET
+      !byte PETSCII_RED, $FF
+      !byte PETSCII_CURSOR_RIGHT, ASCII_RIGHT_BRACKET
+      !byte PETSCII_GREEN, ASCII_CIRCUMFLEX
+      !byte PETSCII_BLUE, $FF
+      !byte PETSCII_POUND, $FF
+      !byte PETSCII_LEFT_ARROW, $FF
+      !byte PETSCII_SHIFT_PLUS_ALT, $FF
+      !byte PETSCII_COMMODORE_MINUS_ALT, $FF
+      !byte PETSCII_SHIFT_UP_ARROW_ALT, $FF
+      !byte PETSCII_COMMODORE_ASTERISK_ALT, $FF
+      !byte PETSCII_SHIFT_PLUS, $FF
+      !byte PETSCII_COMMODORE_MINUS, $FF
+      !byte PETSCII_SHIFT_UP_ARROW_ALT_2, $FF
+      !byte PETSCII_COMMODORE_ASTERISK, $FF
 
     .EXCEPTIONS_END:
 
@@ -345,7 +351,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_PET_ASC_C = 1) {
   !zone Pet_Asc_C
@@ -386,39 +394,39 @@
       !byte %11100000             ; 224-255 impossibile
 
     .EXCEPTIONS:
-      !byte $40, $40              ; 64 > 64 (@)
-      !byte $5B, $5B              ; 91 > 91 ([)
-      !byte $5D, $5D              ; 93 > 93 (])
-      !byte $5E, $5E              ; 94 > 94 (^)
-      !byte $60, $7E              ; 96 > 126 (~)
-      !byte $7D, $7C              ; 125 > 124 (|)
-      !byte $A0, $20              ; 160 > 32 (spazio)
-      !byte $A4, $5F              ; 164 > 95 (_)
-      !byte $AB, $7D              ; 171 > 125 (})
-      !byte $AD, $60              ; 173 > 96 (`)
-      !byte $B3, $7B              ; 179 > 123 ({)
-      !byte $BF, $5C              ; 191 > 92 (\)
-      !byte $C0, $7E              ; 192 > 126 (~)
-      !byte $DD, $7C              ; 221 > 124 (|)
-      !byte $E0, $20              ; 224 > 32 (spazio)
-      !byte $E4, $5F              ; 228 > 95 (_)
-      !byte $EB, $7D              ; 235 > 125 (})
-      !byte $ED, $60              ; 237 > 96 (`)
-      !byte $F3, $7B              ; 243 > 123 ({)
+      !byte PETSCII_AT_SIGN, ASCII_AT_SIGN
+      !byte PETSCII_LEFT_BRACKET, ASCII_LEFT_BRACKET
+      !byte PETSCII_RIGHT_BRACKET, ASCII_RIGHT_BRACKET
+      !byte PETSCII_CIRCUMFLEX, ASCII_CIRCUMFLEX
+      !byte PETSCII_TILDE_ALT, ASCII_TILDE
+      !byte PETSCII_VERTICAL_BAR_ALT, ASCII_VERTICAL_BAR
+      !byte PETSCII_SHIFT_SPACE, ASCII_SPACE
+      !byte PETSCII_UNDERSCORE, ASCII_UNDERSCORE
+      !byte PETSCII_RIGHT_CURLY_BRACKET, ASCII_RIGHT_CURLY_BRACKET
+      !byte PETSCII_GRAVE_ACCENT, ASCII_GRAVE_ACCENT
+      !byte PETSCII_LEFT_CURLY_BRACKET, ASCII_LEFT_CURLY_BRACKET
+      !byte PETSCII_BACKSLASH, ASCII_BACKSLASH
+      !byte PETSCII_TILDE, ASCII_TILDE
+      !byte PETSCII_VERTICAL_BAR, ASCII_VERTICAL_BAR
+      !byte PETSCII_SHIFT_SPACE_ALT, ASCII_SPACE
+      !byte PETSCII_UNDERSCORE_ALT, ASCII_UNDERSCORE
+      !byte PETSCII_RIGHT_CURLY_BRACKET_ALT, ASCII_RIGHT_CURLY_BRACKET
+      !byte PETSCII_GRAVE_ACCENT_ALT, ASCII_GRAVE_ACCENT
+      !byte PETSCII_LEFT_CURLY_BRACKET_ALT, ASCII_LEFT_CURLY_BRACKET
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $5C, $FF              ; 92 > impossibile
-      !byte $5F, $FF              ; 95 > impossibile
-      !byte $7B, $FF              ; 123 > impossibile
-      !byte $7C, $FF              ; 124 > impossibile
-      !byte $7E, $FF              ; 126 > impossibile
-      !byte $7F, $FF              ; 127 > impossibile
-      !byte $A6, $7F              ; 166 > 127 (DEL, controllo)
-      !byte $DB, $FF              ; 219 > impossibile
-      !byte $DC, $FF              ; 220 > impossibile
-      !byte $DE, $FF              ; 222 > impossibile
-      !byte $DF, $FF              ; 223 > impossibile
-      !byte $E6, $7F              ; 230 > 127 (DEL, controllo)
+      !byte PETSCII_POUND, $FF
+      !byte PETSCII_LEFT_ARROW, $FF
+      !byte PETSCII_SHIFT_PLUS_ALT, $FF
+      !byte PETSCII_COMMODORE_MINUS_ALT, $FF
+      !byte PETSCII_SHIFT_UP_ARROW_ALT, $FF
+      !byte PETSCII_COMMODORE_ASTERISK_ALT, $FF
+      !byte PETSCII_DELETE_SUBSTITUTE, ASCII_DELETE
+      !byte PETSCII_SHIFT_PLUS, $FF
+      !byte PETSCII_COMMODORE_MINUS, $FF
+      !byte PETSCII_SHIFT_UP_ARROW_ALT_2, $FF
+      !byte PETSCII_COMMODORE_ASTERISK, $FF
+      !byte PETSCII_DELETE_SUBSTITUTE_ALT, ASCII_DELETE
 
     .EXCEPTIONS_END:
 
@@ -469,7 +477,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_PET_ECM = 1) {
   !zone Pet_Ecm
@@ -519,7 +529,7 @@
       !byte %00000001             ; 224-255 > BGCOL1
 
     .EXCEPTIONS:
-      !byte $FF, $1E              ; 255 > 30 (pigreco: in ECM appare come freccia in su)
+      !byte PETSCII_SHIFT_UP_ARROW, SCREEN_UP_ARROW
 
     .EXCEPTIONS_END:
 
@@ -556,7 +566,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_PET_ECM_C = 1) {
   !zone Pet_Ecm_C
@@ -614,7 +626,7 @@
       !byte %00000001             ; 224-255 > BGCOL1
 
     .EXCEPTIONS:
-      !byte $FF, $1E              ; 255 > 30 (pigreco: in ECM appare come freccia in su)
+      !byte PETSCII_SHIFT_UP_ARROW, SCREEN_UP_ARROW
 
     .EXCEPTIONS_END:
 

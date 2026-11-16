@@ -48,7 +48,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_SCR_PET = 1) {
   !zone Scr_Pet
@@ -82,10 +84,10 @@
       !byte %10100000             ; 224-255 > 160-191 (inverso)
 
     .EXCEPTIONS:
-      !byte $5E, $FF              ; 94 > 255 (pigreco)
+      !byte SCREEN_SHIFT_UP_ARROW, PETSCII_SHIFT_UP_ARROW
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $DE, $FF              ; 222 > 255 (pigreco inverso)
+      !byte SCREEN_SHIFT_UP_ARROW_REVERSE, PETSCII_SHIFT_UP_ARROW
 
     .EXCEPTIONS_END:
 
@@ -136,7 +138,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <c64/screencodes.asm>
+;                       <io/chars_common.asm>
 ; ==============================================================================
 !if (__USE_SCR_PET_C = 1) {
   !zone Scr_Pet_C
@@ -170,7 +174,7 @@
       !byte %10100000             ; 224-255 > 160-191 (inverso)
 
     .EXCEPTIONS:
-      !byte $5E, $FF              ; 94 > 255 (pigreco)
+      !byte SCREEN_SHIFT_UP_ARROW, PETSCII_SHIFT_UP_ARROW
 
     .EXCEPTIONS_IMPERFECT:
 
@@ -213,7 +217,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_SCR_ASC = 1) {
   !zone Scr_Asc
@@ -254,27 +260,27 @@
       !byte %11100000             ; 224-255 impossibile
 
     .EXCEPTIONS:
-      !byte $00, $40              ; 0 > 64 (@)
-      !byte $1B, $5B              ; 27 > 91 ([)
-      !byte $1D, $5D              ; 29 > 93 (])
-      !byte $1E, $5E              ; 30 > 94 (^)
-      !byte $40, $7E              ; 64 > 126 (~)
-      !byte $5D, $7C              ; 93 > 124 (|)
-      !byte $60, $20              ; 96 > 32 (spazio)
-      !byte $64, $5F              ; 100 > 95 (_)
-      !byte $6B, $7D              ; 107 > 125 (})
-      !byte $6D, $60              ; 109 > 96 (`)
-      !byte $73, $7B              ; 115 > 123 ({)
-      !byte $7F, $5C              ; 127 > 92 (\)
+      !byte SCREEN_AT_SIGN, ASCII_AT_SIGN
+      !byte SCREEN_LEFT_BRACKET, ASCII_LEFT_BRACKET
+      !byte SCREEN_RIGHT_BRACKET, ASCII_RIGHT_BRACKET
+      !byte SCREEN_CIRCUMFLEX, ASCII_CIRCUMFLEX
+      !byte SCREEN_TILDE, ASCII_TILDE
+      !byte SCREEN_VERTICAL_BAR, ASCII_VERTICAL_BAR
+      !byte SCREEN_SHIFT_SPACE, ASCII_SPACE
+      !byte SCREEN_UNDERSCORE, ASCII_UNDERSCORE
+      !byte SCREEN_RIGHT_CURLY_BRACKET, ASCII_RIGHT_CURLY_BRACKET
+      !byte SCREEN_GRAVE_ACCENT, ASCII_GRAVE_ACCENT
+      !byte SCREEN_LEFT_CURLY_BRACKET, ASCII_LEFT_CURLY_BRACKET
+      !byte SCREEN_BACKSLASH, ASCII_BACKSLASH
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $1C, $FF              ; 28 > impossibile
-      !byte $1F, $FF              ; 31 > impossibile
-      !byte $5B, $FF              ; 91 > impossibile
-      !byte $5C, $FF              ; 92 > impossibile
-      !byte $5E, $FF              ; 94 > impossibile
-      !byte $5F, $FF              ; 95 > impossibile
-      !byte $66, $FF              ; 102 > impossibile
+      !byte SCREEN_POUND, $FF
+      !byte SCREEN_LEFT_ARROW, $FF
+      !byte SCREEN_SHIFT_PLUS, $FF
+      !byte SCREEN_COMMODORE_MINUS, $FF
+      !byte SCREEN_SHIFT_UP_ARROW, $FF
+      !byte SCREEN_COMMODORE_ASTERISK, $FF
+      !byte SCREEN_COMMODORE_PLUS, $FF
 
     .EXCEPTIONS_END:
 
@@ -313,7 +319,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_SCR_ASC_C = 1) {
   !zone Scr_Asc_C
@@ -354,27 +362,27 @@
       !byte %11100000             ; 224-255 impossibile
 
     .EXCEPTIONS:
-      !byte $00, $40              ; 0 > 64 (@)
-      !byte $1B, $5B              ; 27 > 91 ([)
-      !byte $1D, $5D              ; 29 > 93 (])
-      !byte $1E, $5E              ; 30 > 94 (^)
-      !byte $40, $7E              ; 64 > 126 (~)
-      !byte $5D, $7C              ; 93 > 124 (|)
-      !byte $60, $20              ; 96 > 32 (spazio)
-      !byte $64, $5F              ; 100 > 95 (_)
-      !byte $6B, $7D              ; 107 > 125 (})
-      !byte $6D, $60              ; 109 > 96 (`)
-      !byte $73, $7B              ; 115 > 123 ({)
-      !byte $7F, $5C              ; 127 > 92 (\)
+      !byte SCREEN_AT_SIGN, ASCII_AT_SIGN
+      !byte SCREEN_LEFT_BRACKET, ASCII_LEFT_BRACKET
+      !byte SCREEN_RIGHT_BRACKET, ASCII_RIGHT_BRACKET
+      !byte SCREEN_CIRCUMFLEX, ASCII_CIRCUMFLEX
+      !byte SCREEN_TILDE, ASCII_TILDE
+      !byte SCREEN_VERTICAL_BAR, ASCII_VERTICAL_BAR
+      !byte SCREEN_SHIFT_SPACE, ASCII_SPACE
+      !byte SCREEN_UNDERSCORE, ASCII_UNDERSCORE
+      !byte SCREEN_RIGHT_CURLY_BRACKET, ASCII_RIGHT_CURLY_BRACKET
+      !byte SCREEN_GRAVE_ACCENT, ASCII_GRAVE_ACCENT
+      !byte SCREEN_LEFT_CURLY_BRACKET, ASCII_LEFT_CURLY_BRACKET
+      !byte SCREEN_BACKSLASH, ASCII_BACKSLASH
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $66, $7F              ; 102 > 127 (DEL, controllo)
-      !byte $1C, $FF              ; 28 > impossibile
-      !byte $1F, $FF              ; 31 > impossibile
-      !byte $5B, $FF              ; 91 > impossibile
-      !byte $5C, $FF              ; 92 > impossibile
-      !byte $5E, $FF              ; 94 > impossibile
-      !byte $5F, $FF              ; 95 > impossibile
+      !byte SCREEN_DELETE_SUBSTITUTE, ASCII_DELETE
+      !byte SCREEN_POUND, $FF
+      !byte SCREEN_LEFT_ARROW, $FF
+      !byte SCREEN_SHIFT_PLUS, $FF
+      !byte SCREEN_COMMODORE_MINUS, $FF
+      !byte SCREEN_SHIFT_UP_ARROW, $FF
+      !byte SCREEN_COMMODORE_ASTERISK, $FF
 
     .EXCEPTIONS_END:
 

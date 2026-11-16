@@ -52,7 +52,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_SCR = 1) {
   !zone Asc_Scr
@@ -88,18 +90,18 @@
       !byte %00000000             ; 96-127  > 0-31
 
     .EXCEPTIONS:
-      !byte $40, $00              ; 64 > 0 (@)
-      !byte $5B, $1B              ; 91 > 27 ([)
-      !byte $5C, $7F              ; 92 > 127 (\)
-      !byte $5D, $1D              ; 93 > 29 (])
-      !byte $5E, $1E              ; 94 > 30 (^)
-      !byte $5F, $64              ; 95 > 100 (_)
-      !byte $60, $6D              ; 96 > 109 (`)
-      !byte $7B, $73              ; 123 > 115 ({)
-      !byte $7C, $5D              ; 124 > 93 (|)
-      !byte $7D, $6B              ; 125 > 107 (})
-      !byte $7E, $40              ; 126 > 64 (~)
-      !byte $7F, $66              ; 127 > 102 (DEL, trama)
+      !byte ASCII_AT_SIGN, SCREEN_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, SCREEN_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, SCREEN_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, SCREEN_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, SCREEN_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, SCREEN_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, SCREEN_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, SCREEN_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, SCREEN_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, SCREEN_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, SCREEN_TILDE
+      !byte ASCII_DELETE, SCREEN_DELETE_SUBSTITUTE
 
     .EXCEPTIONS_IMPERFECT:
 
@@ -137,7 +139,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_SCR_C = 1) {
   !zone Asc_Scr_C
@@ -175,20 +179,20 @@
       !byte %00000000             ; 96-127  > 0-31
 
     .EXCEPTIONS:
-      !byte $40, $00              ; 64 > 0 (@)
-      !byte $5B, $1B              ; 91 > 27 ([)
-      !byte $5C, $7F              ; 92 > 127 (\)
-      !byte $5D, $1D              ; 93 > 29 (])
-      !byte $5E, $1E              ; 94 > 30 (^)
-      !byte $5F, $64              ; 95 > 100 (_)
-      !byte $60, $6D              ; 96 > 109 (`)
-      !byte $7B, $73              ; 123 > 115 ({)
-      !byte $7C, $5D              ; 124 > 93 (|)
-      !byte $7D, $6B              ; 125 > 107 (})
-      !byte $7E, $40              ; 126 > 64 (~)
+      !byte ASCII_AT_SIGN, SCREEN_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, SCREEN_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, SCREEN_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, SCREEN_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, SCREEN_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, SCREEN_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, SCREEN_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, SCREEN_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, SCREEN_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, SCREEN_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, SCREEN_TILDE
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $7F, $FF              ; 127 > impossibile
+      !byte ASCII_DELETE, $FF
 
     .EXCEPTIONS_END:
 
@@ -241,7 +245,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_PET = 1) {
   !zone Asc_Pet
@@ -284,18 +290,18 @@
       !byte %01000000             ; 96-127  > 64-95
 
     .EXCEPTIONS:
-      !byte $40, $40              ; 64 > 64 (@)
-      !byte $5B, $5B              ; 91 > 91 ([)
-      !byte $5C, $BF              ; 92 > 191 (\)
-      !byte $5D, $5D              ; 93 > 93 (])
-      !byte $5E, $5E              ; 94 > 94 (^)
-      !byte $5F, $A4              ; 95 > 164 (_)
-      !byte $60, $AD              ; 96 > 173 (`)
-      !byte $7B, $B3              ; 123 > 179 ({)
-      !byte $7C, $DD              ; 124 > 221 (|)
-      !byte $7D, $AB              ; 125 > 171 (})
-      !byte $7E, $C0              ; 126 > 192 (~)
-      !byte $7F, $A6              ; 127 > 166 (DEL, trama)
+      !byte ASCII_AT_SIGN, PETSCII_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, PETSCII_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, PETSCII_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, PETSCII_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, PETSCII_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, PETSCII_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, PETSCII_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, PETSCII_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, PETSCII_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, PETSCII_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, PETSCII_TILDE
+      !byte ASCII_DELETE, PETSCII_DELETE_SUBSTITUTE
 
     .EXCEPTIONS_IMPERFECT:
 
@@ -336,7 +342,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/petscii.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_PET_C = 1) {
   !zone Asc_Pet_C
@@ -372,20 +380,20 @@
       !byte %01000000             ; 96-127  > 64-95
 
     .EXCEPTIONS:
-      !byte $40, $40              ; 64 > 64 (@)
-      !byte $5B, $5B              ; 91 > 91 ([)
-      !byte $5C, $BF              ; 92 > 191 (\)
-      !byte $5D, $5D              ; 93 > 93 (])
-      !byte $5E, $5E              ; 94 > 94 (^)
-      !byte $5F, $A4              ; 95 > 164 (_)
-      !byte $60, $AD              ; 96 > 173 (`)
-      !byte $7B, $B3              ; 123 > 179 ({)
-      !byte $7C, $DD              ; 124 > 221 (|)
-      !byte $7D, $AB              ; 125 > 171 (})
-      !byte $7E, $C0              ; 126 > 192 (~)
+      !byte ASCII_AT_SIGN, PETSCII_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, PETSCII_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, PETSCII_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, PETSCII_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, PETSCII_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, PETSCII_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, PETSCII_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, PETSCII_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, PETSCII_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, PETSCII_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, PETSCII_TILDE
 
     .EXCEPTIONS_IMPERFECT:
-      !byte $7F, $A6              ; 127 > 166 (DEL, trama)
+      !byte ASCII_DELETE, PETSCII_DELETE_SUBSTITUTE
 
     .EXCEPTIONS_END:
 
@@ -431,7 +439,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_ECM = 1) {
   !zone Asc_Ecm
@@ -473,18 +483,18 @@
       !byte %00000000             ; 96-127  > 0-31
 
     .EXCEPTIONS:
-      !byte $40, $00              ; 64 > 0 (@)
-      !byte $5B, $1B              ; 91 > 27 ([)
-      !byte $5C, $7F              ; 92 > 127 (\)
-      !byte $5D, $1D              ; 93 > 29 (])
-      !byte $5E, $1E              ; 94 > 30 (^)
-      !byte $5F, $64              ; 95 > 100 (_)
-      !byte $60, $6D              ; 96 > 109 (`)
-      !byte $7B, $73              ; 123 > 115 ({)
-      !byte $7C, $5D              ; 124 > 93 (|)
-      !byte $7D, $6B              ; 125 > 107 (})
-      !byte $7E, $40              ; 126 > 64 (~)
-      !byte $7F, $66              ; 127 > 102 (DEL, trama)
+      !byte ASCII_AT_SIGN, SCREEN_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, SCREEN_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, SCREEN_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, SCREEN_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, SCREEN_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, SCREEN_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, SCREEN_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, SCREEN_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, SCREEN_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, SCREEN_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, SCREEN_TILDE
+      !byte ASCII_DELETE, SCREEN_DELETE_SUBSTITUTE
 
     .EXCEPTIONS_END:
 
@@ -519,7 +529,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <io/chars_common.asm>
+; Dipendenze Esterne:   <c64/screencodes.asm>
+;                       <io/chars_common.asm>
+;                       <system/ascii_7bit.asm>
 ; ==============================================================================
 !if (__USE_ASC_ECM_C = 1) {
   !zone Asc_Ecm_C
@@ -563,18 +575,18 @@
       !byte %00000000             ; 96-127  > 0-31
 
     .EXCEPTIONS:
-      !byte $40, $00              ; 64 > 0 (@)
-      !byte $5B, $1B              ; 91 > 27 ([)
-      !byte $5C, $7F              ; 92 > 127 (\)
-      !byte $5D, $1D              ; 93 > 29 (])
-      !byte $5E, $1E              ; 94 > 30 (^)
-      !byte $5F, $64              ; 95 > 100 (_)
-      !byte $60, $6D              ; 96 > 109 (`)
-      !byte $7B, $73              ; 123 > 115 ({)
-      !byte $7C, $5D              ; 124 > 93 (|)
-      !byte $7D, $6B              ; 125 > 107 (})
-      !byte $7E, $40              ; 126 > 64 (~)
-      !byte $7F, $FF              ; 127 > impossibile
+      !byte ASCII_AT_SIGN, SCREEN_AT_SIGN
+      !byte ASCII_LEFT_BRACKET, SCREEN_LEFT_BRACKET
+      !byte ASCII_BACKSLASH, SCREEN_BACKSLASH
+      !byte ASCII_RIGHT_BRACKET, SCREEN_RIGHT_BRACKET
+      !byte ASCII_CIRCUMFLEX, SCREEN_CIRCUMFLEX
+      !byte ASCII_UNDERSCORE, SCREEN_UNDERSCORE
+      !byte ASCII_GRAVE_ACCENT, SCREEN_GRAVE_ACCENT
+      !byte ASCII_LEFT_CURLY_BRACKET, SCREEN_LEFT_CURLY_BRACKET
+      !byte ASCII_VERTICAL_BAR, SCREEN_VERTICAL_BAR
+      !byte ASCII_RIGHT_CURLY_BRACKET, SCREEN_RIGHT_CURLY_BRACKET
+      !byte ASCII_TILDE, SCREEN_TILDE
+      !byte ASCII_DELETE, $FF
 
     .EXCEPTIONS_END:
 
