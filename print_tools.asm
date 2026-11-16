@@ -1,6 +1,6 @@
 ; ==============================================================================
 ; FILE:           print_tools.asm
-; PROGETTO:       Libreria di Sistema (system.c64)
+; PROGETTO:       Libreria di Sistema (io.c64)
 ; TARGET:         ACME Assembler / MOS 6510 (Commodore 64)
 ; DESCRIZIONE:    Utilità per la stampa di caratteri, messaggi e tabelle di
 ;                 messaggi con supporto per il modo a Colore di Sfondo Esteso.
@@ -12,7 +12,7 @@
 ;                 PRINT_RAW       Stampa un messaggio puntato da .A / .Y
 ;                 PRINT_IMM       Stampa il messaggio che segue la chiamata
 ;                 m_Put_ECM_Char  Invia un carattere gestendo il modo ECM
-; DIPENDENZE:     <system/vic_ii_tools.asm>
+; DIPENDENZE:     <chip/vic_ii_tools.asm>
 ; REQUISITI ZP:   __BG_COL
 ; ==============================================================================
 
@@ -90,7 +90,7 @@
 ; ******************************************************************************
 
 ; PROVA TEMPORANEA: once sospeso (LIB-01).
-; !source "vic_ii_tools.asm", once
+; !source "../chip/vic_ii_tools.asm", once
 
 ; ==============================================================================
 ; MACRO: m_At
@@ -149,8 +149,8 @@
 ; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <chip/vic_ii.asm>
+;                       <chip/vic_ii_tools.asm>
 ;                       <system/standard.asm>
-;                       <system/vic_ii_tools.asm>
 ; ==============================================================================
 !if (__USE_PLOT_CHAR = 1) {
   !zone Plot_Char
@@ -214,8 +214,8 @@
 ;
 ; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), INDEX2
 ; Dipendenze Esterne:   <c64/symbols.asm>
+;                       <chip/vic_ii_tools.asm>
 ;                       <system/standard.asm>
-;                       <system/vic_ii_tools.asm>
 ; ==============================================================================
 !if (__USE_COLOR_CHAR = 1) {
   !zone Color_Char
@@ -697,10 +697,10 @@
 ;
 ; Registri Modificati:  .P (Negative, oVerflow, Zero, Carry), __BG_COL, RVS
 ; Dipendenze Esterne:   <c64/kernal.asm>
-;                       <c64/petscii.asm>
 ;                       <c64/symbols.asm>
 ;                       <io/chars.asm>
 ;                       <system/branch.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !macro m_Put_ECM_Char {
   !zone Put_ECM_Char

@@ -313,8 +313,8 @@
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Zero, Carry),
 ;                       STACK (fino a 256 byte)
 ; Dipendenze Esterne:   <c64/kernal.asm>
-;                       <c64/petscii.asm>
 ;                       <c64/symbols.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !if (__USE_DISK_DIRECTORY = 1) {
   !zone Disk_Directory

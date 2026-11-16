@@ -173,9 +173,9 @@
 ;
 ; Registri Modificati:  .A, .P (Negative, Zero, Carry), CIAPRA, CIAPRB,
 ;                       __KBD_HISTORY
-; Dipendenze Esterne:   <c64/keycodes.asm>
-;                       <c64/symbols.asm>
+; Dipendenze Esterne:   <c64/symbols.asm>
 ;                       <chip/cia.asm>
+;                       <system/keycodes.asm>
 ; ==============================================================================
 !if (__USE_KEYSCAN = 1) {
   !zone Keyscan

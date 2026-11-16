@@ -47,9 +47,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
+;                       <system/petscii.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_PET_SCR = 1) {
   !zone Pet_Scr
@@ -121,9 +121,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
+;                       <system/petscii.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_PET_SCR_C = 1) {
   !zone Pet_Scr_C
@@ -219,9 +219,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !if (__USE_PET_ASC = 1) {
   !zone Pet_Asc
@@ -351,9 +351,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !if (__USE_PET_ASC_C = 1) {
   !zone Pet_Asc_C
@@ -477,9 +477,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
+;                       <system/petscii.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_PET_ECM = 1) {
   !zone Pet_Ecm
@@ -566,9 +566,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
+;                       <system/petscii.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_PET_ECM_C = 1) {
   !zone Pet_Ecm_C

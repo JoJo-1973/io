@@ -52,9 +52,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_ASC_SCR = 1) {
   !zone Asc_Scr
@@ -139,9 +139,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_ASC_SCR_C = 1) {
   !zone Asc_Scr_C
@@ -245,9 +245,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !if (__USE_ASC_PET = 1) {
   !zone Asc_Pet
@@ -342,9 +342,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry)
-; Dipendenze Esterne:   <c64/petscii.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/petscii.asm>
 ; ==============================================================================
 !if (__USE_ASC_PET_C = 1) {
   !zone Asc_Pet_C
@@ -439,9 +439,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_ASC_ECM = 1) {
   !zone Asc_Ecm
@@ -529,9 +529,9 @@
 ;   - Stabile
 ;
 ; Registri Modificati:  .A, .X, .Y, .P (Negative, Zero, Carry), __BG_COL
-; Dipendenze Esterne:   <c64/screencodes.asm>
-;                       <io/chars_common.asm>
+; Dipendenze Esterne:   <io/chars_common.asm>
 ;                       <system/ascii_7bit.asm>
+;                       <system/screencodes.asm>
 ; ==============================================================================
 !if (__USE_ASC_ECM_C = 1) {
   !zone Asc_Ecm_C
