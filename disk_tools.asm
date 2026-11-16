@@ -151,7 +151,7 @@
       lda STACK,y                       ; Dopo NN ci deve essere una virgola.
       iny
 
-      cmp #$2C
+      cmp #","
       bne .Exit_DECODE_DISK_STATUS_Bad_Format
 
     ; Salta il messaggio fino alla virgola.
@@ -164,7 +164,7 @@
       bcs .Exit_DECODE_DISK_STATUS_Bad_Format
 
     .Loop_Check_Message:
-      cmp #$2C
+      cmp #","
       bne .Loop_Skip_Message            ; REPEAT UNTIL: il carattere è una virgola
 
       jsr DISK_GET_NUMBER               ; Legge TT.
@@ -175,7 +175,7 @@
       lda STACK,y                       ; Dopo TT ci deve essere una virgola.
       iny
 
-      cmp #$2C
+      cmp #","
       bne .Exit_DECODE_DISK_STATUS_Bad_Format
 
       jsr DISK_GET_NUMBER               ; Legge SS.
@@ -238,7 +238,7 @@
       iny
       sec
 
-      sbc #$30                          ; Sottrae il codice della cifra "0".
+      sbc #"0"                          ; Sottrae il codice della cifra "0".
       cmp #10
       bcs .Exit_DISK_GET_NUMBER
 
@@ -248,7 +248,7 @@
       iny
       sec
 
-      sbc #$30
+      sbc #"0"
       cmp #10
       bcs .Exit_DISK_GET_NUMBER
 
