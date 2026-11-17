@@ -703,95 +703,91 @@
 ;                       <system/petscii.asm>
 ; ==============================================================================
 !macro m_Put_ECM_Char {
-  !zone Put_ECM_Char
+  .TABLE_SIZE       = .EXCEPTIONS_END-.EXCEPTIONS
 
-    .TABLE_SIZE     = .EXCEPTIONS_END-.EXCEPTIONS
+    sta ._TEMPA                     ; Preserva il contenuto dei registri.
+    stx ._TEMPX
+    sty ._TEMPY
 
-      sta ._TEMPA                   ; Preserva il contenuto dei registri.
-      stx ._TEMPX
-      sty ._TEMPY
+    tax                             ; Salva una copia del codice PETSCII originale.
+    ; Se i bit #6 e #5 non sono entrambi a zero il codice non è di
+    ; controllo: passa alla stampa.
+    and #%01100000
+    bne .Else_Printable             ; IF: il codice è di controllo
 
-      tax                           ; Salva una copia del codice PETSCII originale.
-      ; Se i bit #6 e #5 non sono entrambi a zero il codice non è di
-      ; controllo: passa alla stampa.
-      and #%01100000
-      bne .Else_Printable           ; IF: il codice è di controllo
+    txa                             ; Codice di controllo: se è 0 oppure {RVS} ON (18)
+    beq .Exit_M_PUT_ECM_CHAR        ; oppure {RVS} OFF (146) esci senza stampare.
 
-      txa                           ; Codice di controllo: se è 0 oppure {RVS} ON (18)
-      beq .Exit_M_PUT_ECM_CHAR      ; oppure {RVS} OFF (146) esci senza stampare.
+    cmp #PETSCII_REVERSE_ON
+    beq .Exit_M_PUT_ECM_CHAR
 
-      cmp #PETSCII_REVERSE_ON
-      beq .Exit_M_PUT_ECM_CHAR
+    cmp #PETSCII_REVERSE_OFF
+    beq .Exit_M_PUT_ECM_CHAR
 
-      cmp #PETSCII_REVERSE_OFF
-      beq .Exit_M_PUT_ECM_CHAR
+    cmp #$05                        ; Se non è un codice di cambio del colore di sfondo
+    bcs .Output                     ; (1-4) stampalo ed esci.
 
-      cmp #$05                      ; Se non è un codice di cambio del colore di sfondo
-      bcs .Output                   ; (1-4) stampalo ed esci.
+    dex                             ; Altrimenti convertilo in 0-3,
+    stx __BG_COL                    ; salvalo in __BG_COL
+    jmp .Exit_M_PUT_ECM_CHAR        ; e finisci senza stampare.
 
-      dex                           ; Altrimenti convertilo in 0-3,
-      stx __BG_COL                  ; salvalo in __BG_COL
-      jmp .Exit_M_PUT_ECM_CHAR      ; e finisci senza stampare.
+  .Else_Printable:
+    ; Codice stampabile: recupera il codice originale.
+    txa                             ; ELSE
 
-    .Else_Printable:
-      ; Codice stampabile: recupera il codice originale.
-      txa                           ; ELSE
+    ; Se il codice è un'eccezione (255) .A contiene già il codice
+    ; normalizzato e la macro salta a .Apply_BGCOL.
+    +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Apply_BGCOL
 
-      ; Se il codice è un'eccezione (255) .A contiene già il codice
-      ; normalizzato e la macro salta a .Apply_BGCOL.
-      +m_Scan_Exceptions .EXCEPTIONS, .TABLE_SIZE, .Apply_BGCOL
+    +m_Apply_Table .NORM_TABLE      ; Altrimenti sostituisce i 3 bit più significativi.
 
-      +m_Apply_Table .NORM_TABLE    ; Altrimenti sostituisce i 3 bit più significativi.
+  .Apply_BGCOL:
+    tax                             ; Salva il codice normalizzato.
+    lda __BG_COL                    ; Il bit #0 di __BG_COL va nel Carry e il bit #1
+    lsr a                           ; diventa il bit #0 di .A, cioè il modo reverse
+    and #%00000001                  ; (0 = normale, 1 = inverso).
+    sta RVS
 
-    .Apply_BGCOL:
-      tax                           ; Salva il codice normalizzato.
-      lda __BG_COL                  ; Il bit #0 di __BG_COL va nel Carry e il bit #1
-      lsr a                         ; diventa il bit #0 di .A, cioè il modo reverse
-      and #%00000001                ; (0 = normale, 1 = inverso).
-      sta RVS
+    txa                             ; Recupera il codice normalizzato. Se il bit #0 di
+    bcc .Output                     ; __BG_COL è 0 stampalo così com'è, altrimenti
 
-      txa                           ; Recupera il codice normalizzato. Se il bit #0 di
-      bcc .Output                   ; __BG_COL è 0 stampalo così com'è, altrimenti
+    ora #%10000000                  ; setta il bit #7 prima di stamparlo.
 
-      ora #%10000000                ; setta il bit #7 prima di stamparlo.
+  .Output:
+    jsr CHROUT
 
-    .Output:
-      jsr CHROUT
+  .Exit_M_PUT_ECM_CHAR:
+    lda ._TEMPA                     ; Ripristina il contenuto dei registri.
+    ldx ._TEMPX
+    ldy ._TEMPY
 
-    .Exit_M_PUT_ECM_CHAR:
-      lda ._TEMPA                   ; Ripristina il contenuto dei registri.
-      ldx ._TEMPX
-      ldy ._TEMPY
-
-      +m_Bra .Skip_Table            ; Salta oltre la tabella dei dati al codice che segue la
+    +m_Bra .Skip_Table              ; Salta oltre la tabella dei dati al codice che segue la
                                     ; macro: in tal modo è possibile costruire una subroutine
                                     ; __PUT_CHAR concatenando questa macro con altro codice.
 
-    .EXCEPTIONS:
-      !byte $FF, $5E                ; 255 > 94 (in ECM il pigreco appare come freccia in su)
+  .EXCEPTIONS:
+    !byte $FF, $5E                  ; 255 > 94 (in ECM il pigreco appare come freccia in su)
 
-    .EXCEPTIONS_END:
+  .EXCEPTIONS_END:
 
-    .NORM_TABLE:
-      !byte %00000000               ; 0-31    > 0-31      %000 > %000
-      !byte %00100000               ; 32-63   > 32-63     %001 > %001
-      !byte %01000000               ; 64-95   > 64-95     %010 > %010
-      !byte %01000000               ; 96-127  > 64-95     %011 > %010
-      !byte %10000000               ; 128-159 > 128-159   %100 > %100
-      !byte %00100000               ; 160-191 > 32-63     %101 > %001
-      !byte %01000000               ; 192-223 > 64-95     %110 > %010
-      !byte %00100000               ; 224-255 > 32-63     %111 > %001
+  .NORM_TABLE:
+    !byte %00000000                 ; 0-31    > 0-31      %000 > %000
+    !byte %00100000                 ; 32-63   > 32-63     %001 > %001
+    !byte %01000000                 ; 64-95   > 64-95     %010 > %010
+    !byte %01000000                 ; 96-127  > 64-95     %011 > %010
+    !byte %10000000                 ; 128-159 > 128-159   %100 > %100
+    !byte %00100000                 ; 160-191 > 32-63     %101 > %001
+    !byte %01000000                 ; 192-223 > 64-95     %110 > %010
+    !byte %00100000                 ; 224-255 > 32-63     %111 > %001
 
-    ._TEMPA:
-      !byte 0
+  ._TEMPA:
+    !byte 0
 
-    ._TEMPX:
-      !byte 0
+  ._TEMPX:
+    !byte 0
 
-    ._TEMPY:
-      !byte 0
+  ._TEMPY:
+    !byte 0
 
-    .Skip_Table:
-
-  !zone
+  .Skip_Table:
 }
