@@ -19,7 +19,7 @@ SEI                   ; Disabilita le interruzioni così che la scansione della 
 lda CIAPRA
 and #%00111111
 bcs .Select_Port_2
-ora #%01000000        ;                       ; Seleziona la porta joystick #1.
+ora #%01000000                               ; Seleziona la porta joystick #1.
 +m_Skip2
 .Select_Port_2:
 ora #%10000000        ; Seleziona la porta joystick #2.
@@ -28,7 +28,7 @@ sta CIAPRA
 .Paddle_A:
 lda CIAPRB            ; Leggi subito lo stato del pulsante della paddle #1 / #3
 and #%00000100        ; Isola il bit 2 e salvalo.
-sta .TEMP
+sta ._TEMP
 
 LDA #$00              ; Azzera i registri di conteggio per la lettura della prima paddle.
 TAX
@@ -51,8 +51,8 @@ pha
 .Paddle_B:
 lda CIAPRB            ; Leggi subito lo stato del pulsante della paddle #2 / #4
 and #%00001000        ; Isola il bit 3 e salvalo insieme allo stato dell'altro pulsante.
-ora .TEMP
-sta .TEMP
+ora ._TEMP
+sta ._TEMP
 
 LDA #$00              ; Azzera i registri di conteggio per la lettura della seconda paddle.
 TAX
@@ -72,7 +72,7 @@ BNE .Loop_Sum_B
 pla             ; Il risultato della seconda lettura è in .Y.
 tax   ; Recupera il risultato della prima lettura e conservalo in .X.
 
-lda .TEMP       ; Ora recupera in .A il risultato della lettura dei pulsanti
+lda ._TEMP       ; Ora recupera in .A il risultato della lettura dei pulsanti
 eor #%00001100  ; invertine lo stato (0 = rilasciato, 1 = premuto)
 lsr a           ; e spostalo nei bit 0-1.
 lsr a
@@ -81,5 +81,5 @@ lsr a
 CLI           ; Riabilita le interruzioni per poter rileggere la tastiera.
 RTS
 
-.TEMP:
+._TEMP:
 !byte 0
