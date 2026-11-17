@@ -41,25 +41,25 @@
 ; Le subroutine PRINT_* possono essere personalizzate con una propria subroutine
 ; di stampa (il driver), assegnando la sua etichetta al punto di
 ; personalizzazione __PUT_CHAR in config.asm, per esempio
-; __PUT_CHAR = PUT_CHAR_ECM.
+; __PUT_CHAR = PUT_ECM_CHAR.
 ;
 ; Esempio 1: Driver di stampa in modo ECM.
 ;
-; PUT_CHAR_ECM:
+; PUT_ECM_CHAR:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;
-; .Exit_PUT_CHAR_ECM:
+; .Exit_PUT_ECM_CHAR:
 ;   rts
 ;
 ; Esempio 2: Driver di stampa in modo ECM a doppia spaziatura.
 ;
-; PUT_CHAR_ECM_WIDE:
+; PUT_ECM_CHAR_WIDE:
 ;   +m_Put_ECM_Char               ; Stampa il carattere in modo ECM
 ;   lda #PETSCII_CURSOR_RIGHT     ; Codice PETSCII per spostare il cursore
 ;                                 ; a destra di una posizione
 ;   jsr CHROUT
 ;
-; .Exit_PUT_CHAR_ECM_WIDE:
+; .Exit_PUT_ECM_CHAR_WIDE:
 ;   rts
 ;
 ; Esempio 3: Driver di stampa in verticale.
