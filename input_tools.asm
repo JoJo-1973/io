@@ -18,19 +18,21 @@
 ;               paddle #1 e #2, con Carry a 1 le paddle #3 e #4.
 ;
 ;               Dopo la scelta della porta attende 516 cicli (m_Delay_5n1),
-;               perché il SID aggiorna POTX e POTY ogni 512 cicli circa. Poi,
-;               per eliminare il jitter, legge ogni paddle 256 volte e calcola
-;               la media delle letture, arrotondata all'intero più vicino. Le
-;               interruzioni sono disabilitate durante la lettura, perché la
-;               scansione della tastiera non influisca sulle paddle, e si
-;               riabilitano sempre in uscita, anche se il chiamante le aveva già
-;               disabilitate.
+;               perché il SID aggiorna POTX e POTY ogni 512 cicli circa (prova
+;               su hardware: con 516 cicli la lettura è quella della porta
+;               scelta, a meno di 1 di jitter). Poi, per eliminare il jitter,
+;               legge ogni paddle 256 volte e calcola la media delle letture,
+;               arrotondata all'intero più vicino. Le interruzioni sono
+;               disabilitate durante la lettura, perché la scansione della
+;               tastiera non influisca sulle paddle, e si riabilitano sempre
+;               in uscita, anche se il chiamante le aveva già disabilitate.
 ;
 ;               Scrivendo in CIAPRA porta a 1 i bit #0-#5, cioè deseleziona le
 ;               righe da 0 a 5 della tastiera, e imposta i bit #6 e #7 per
 ;               scegliere la porta. Non li ripristina. Resta selezionata una
 ;               riga della tastiera (la 7 con la porta 1, la 6 con la porta 2):
-;               i suoi tasti premuti possono falsare i pulsanti.
+;               i suoi tasti premuti falsano i pulsanti (confermato su
+;               hardware): non si può evitare.
 ;
 ; Input:
 ;   - Flag Carry (1 bit, .P)       : 0 = paddle #1 e #2; 1 = paddle #3 e #4
@@ -57,27 +59,6 @@
   !zone Paddle_Read
 
     PADDLE_READ:
-      ; ****************************************************************
-      ; * TO-DO: verificare su hardware la riga di tastiera.           *
-      ; *                                                              *
-      ; * Che cosa fa il codice: sceglie la porta, attende 516 cicli,  *
-      ; * legge i pulsanti e poi campiona POTX e POTY.                 *
-      ; *                                                              *
-      ; * Che cosa succede davvero: resta selezionata una riga della   *
-      ; * tastiera (la 7 con la porta 1, la 6 con la porta 2): un suo  *
-      ; * tasto premuto può far leggere un pulsante falso. L'attesa di *
-      ; * 516 cicli è un'assunzione prudente sul periodo di            *
-      ; * aggiornamento del SID.                                       *
-      ; *                                                              *
-      ; * Conseguenze: pulsante falso, e attesa forse più lunga del    *
-      ; * necessario: due ipotesi non verificate.                      *
-      ; *                                                              *
-      ; * Correzione: provare con paddle vere o in VICE; se l'attesa   *
-      ; * non serve, ridurla o toglierla.                              *
-      ; *                                                              *
-      ; * Fonte: revisione del codice, 2026-11-20.                     *
-      ; ****************************************************************
-
       sei                       ; La tastiera non disturba la lettura.
 
       lda #%00111111            ; Deseleziona le righe da 0 a 5.
