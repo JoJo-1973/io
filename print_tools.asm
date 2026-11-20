@@ -13,6 +13,10 @@
 ;                 PRINT_IMM       Stampa il messaggio che segue la chiamata
 ;                 m_Put_ECM_Char  Invia un carattere gestendo il modo ECM
 ; DIPENDENZE:     <chip/vic_ii_tools.asm>
+;                 <io/chars.asm>
+;                 <mem/mem16.asm>
+;                 <system/branch.asm>
+;                 <system/standard.asm>
 ; REQUISITI ZP:   __BG_COL
 ; ==============================================================================
 
@@ -89,8 +93,11 @@
 ; sfondo ECM_BG1.
 ; ******************************************************************************
 
-; PROVA TEMPORANEA: once sospeso (LIB-01).
-; !source "../chip/vic_ii_tools.asm", once
+!source "../chip/vic_ii_tools.asm", once
+!source "chars.asm", once
+!source "../mem/mem16.asm", once
+!source "../system/branch.asm", once
+!source "../system/standard.asm", once
 
 ; ==============================================================================
 ; MACRO: m_At
