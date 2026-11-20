@@ -1,85 +1,163 @@
-; Routine per loeggere le paddle eliminando il jitter.
+; ==============================================================================
+; FILE:           input_tools.asm
+; PROGETTO:       Libreria di Sistema (io.c64)
+; TARGET:         ACME Assembler / MOS 6510 (Commodore 64)
+; DESCRIZIONE:    Lettura delle paddle del C64 con eliminazione del jitter.
+; CONTENUTO:      PADDLE_READ   Legge le due paddle di una porta e i pulsanti
+; DIPENDENZE:     <system/standard.asm>
+; REQUISITI ZP:   Nessuno
+; ==============================================================================
 
-; Input: C=0 leggi le paddle #1 e #2
-;        C=1 leggi le paddle #3 e #4
-; Output: .X Lettura paddle #1 / #3
-;         .Y Lettura paddle #2 / #4
-;         .A Lettura pulsanti: bit 0 = Paddle #1 / #3
-;                              bit 1 = Paddle #2 / #4
-;                              0 = rilasciato, 1 = premuto
+!source <system/standard.asm>, once
 
-!source <system/standard.asm>
-!source <chip/sid.asm>
-!source <chip/cia.asm>
+; ==============================================================================
+; SUBROUTINE: PADDLE_READ
+; ------------------------------------------------------------------------------
+; Descrizione:  Legge le due paddle collegate a una porta joystick e i loro
+;               pulsanti. Il Carry sceglie la porta: con Carry a 0 si leggono le
+;               paddle #1 e #2, con Carry a 1 le paddle #3 e #4.
+;
+;               Dopo la scelta della porta attende 516 cicli (m_Delay_5n1),
+;               perché il SID aggiorna POTX e POTY ogni 512 cicli circa. Poi,
+;               per eliminare il jitter, legge ogni paddle 256 volte e calcola
+;               la media delle letture, arrotondata all'intero più vicino. Le
+;               interruzioni sono disabilitate durante la lettura, perché la
+;               scansione della tastiera non influisca sulle paddle, e si
+;               riabilitano sempre in uscita, anche se il chiamante le aveva già
+;               disabilitate.
+;
+;               Scrivendo in CIAPRA porta a 1 i bit #0-#5, cioè deseleziona le
+;               righe da 0 a 5 della tastiera, e imposta i bit #6 e #7 per
+;               scegliere la porta. Non li ripristina. Resta selezionata una
+;               riga della tastiera (la 7 con la porta 1, la 6 con la porta 2):
+;               i suoi tasti premuti possono falsare i pulsanti.
+;
+; Input:
+;   - Flag Carry (1 bit, .P)       : 0 = paddle #1 e #2; 1 = paddle #3 e #4
+;
+; Output:
+;   - .X (1 byte, CPU)             : Lettura della paddle #1 o #3
+;   - .Y (1 byte, CPU)             : Lettura della paddle #2 o #4
+;   - .A (1 byte, CPU)             : Pulsanti, 0 = rilasciato, 1 = premuto
+;                                    (bit #0 = paddle #1 o #3, bit #1 =
+;                                    paddle #2 o #4; gli altri bit sono 0)
+;   - Flag Interrupt (1 bit, .P)   : sempre 0
+;
+; Variazione Stack (.S):
+;   - Stabile
+;
+; Registri Modificati:  .A, .X, .Y, .P (Negative, oVerflow, Interrupt, Zero,
+;                       Carry), CIAPRA
+;
+; Dipendenze Esterne:   <chip/cia.asm>
+;                       <chip/sid.asm>
+;                       <system/standard.asm>
+; ==============================================================================
+!if (__USE_PADDLE_READ = 1) {
+  !zone Paddle_Read
 
-PADDLE_READ:
+    PADDLE_READ:
+      ; ****************************************************************
+      ; * TO-DO: verificare su hardware la riga di tastiera.           *
+      ; *                                                              *
+      ; * Che cosa fa il codice: sceglie la porta, attende 516 cicli,  *
+      ; * legge i pulsanti e poi campiona POTX e POTY.                 *
+      ; *                                                              *
+      ; * Che cosa succede davvero: resta selezionata una riga della   *
+      ; * tastiera (la 7 con la porta 1, la 6 con la porta 2): un suo  *
+      ; * tasto premuto può far leggere un pulsante falso. L'attesa di *
+      ; * 516 cicli è un'assunzione prudente sul periodo di            *
+      ; * aggiornamento del SID.                                       *
+      ; *                                                              *
+      ; * Conseguenze: pulsante falso, e attesa forse più lunga del    *
+      ; * necessario: due ipotesi non verificate.                      *
+      ; *                                                              *
+      ; * Correzione: provare con paddle vere o in VICE; se l'attesa   *
+      ; * non serve, ridurla o toglierla.                              *
+      ; *                                                              *
+      ; * Fonte: revisione del codice, 2026-11-20.                     *
+      ; ****************************************************************
 
-SEI                   ; Disabilita le interruzioni così che la scansione della tastiera non influisca sulla lettura delle paddle.
+      sei                       ; La tastiera non disturba la lettura.
 
-lda CIAPRA
-and #%00111111
-bcs .Select_Port_2
-ora #%01000000                               ; Seleziona la porta joystick #1.
-+m_Skip2
-.Select_Port_2:
-ora #%10000000        ; Seleziona la porta joystick #2.
-sta CIAPRA
+      lda #%00111111            ; Deseleziona le righe da 0 a 5.
+      bcs .Select_Port_2        ; IF: Carry = 1
 
-.Paddle_A:
-lda CIAPRB            ; Leggi subito lo stato del pulsante della paddle #1 / #3
-and #%00000100        ; Isola il bit 2 e salvalo.
-sta ._TEMP
+      ora #%01000000            ; Seleziona la porta joystick #1.
+      +m_Skip2                  ; ALWAYS: salta l'istruzione seguente.
 
-LDA #$00              ; Azzera i registri di conteggio per la lettura della prima paddle.
-TAX
-TAY
+    .Select_Port_2:
+      ora #%10000000            ; Seleziona la porta joystick #2.
+      sta CIAPRA
 
-CLC
+      +m_Delay_5n1 ".X", 103    ; Attende 516 cicli: il SID aggiorna ogni 512.
 
-.Loop_Sum_A
-ADC POTX         ; Somma per 256 volte la lettura di .PADDLE_A
-BCC .No_Carry_A       ; ma scarta il byte basso della somma e conserva solo
-INY                   ; il byte alto in .Y. Questo equivale a sommare 256 volte e dividere il totale per 256: in altre parole si calcola la media di 256 letture.
+      ; Lettura della prima paddle (#1 o #3).
+      lda CIAPRB                ; Leggi subito il pulsante.
+      and #%00000100            ; Isola il bit #2 e salvalo.
+      sta ._TEMP
 
-.No_Carry_A
-DEX
-BNE .Loop_Sum_A
+      ; Somma 256 letture partendo da 128 e scarta il byte basso: .Y
+      ; conta i riporti, cioè il byte alto: la media arrotondata.
+      lda #128                  ; Parte da 128 per arrotondare.
+      ldy #0
+      clc
+      ldx #0                    ; FOR (Inizializzazione)
 
-tya            ; Conserva il risultato sullo stack.
-pha
+    .Loop_Sum_Paddle_1:
+      adc POTX                  ; FOR (Corpo)
 
-.Paddle_B:
-lda CIAPRB            ; Leggi subito lo stato del pulsante della paddle #2 / #4
-and #%00001000        ; Isola il bit 3 e salvalo insieme allo stato dell'altro pulsante.
-ora ._TEMP
-sta ._TEMP
+      bcc .Next_Sum_Paddle_1    ; IF: la somma ha un riporto
 
-LDA #$00              ; Azzera i registri di conteggio per la lettura della seconda paddle.
-TAX
-TAY
+      iny                       ; Conta il riporto.
+      clc                       ; Il riporto è già contato.
 
-CLC
+    .Next_Sum_Paddle_1:
+      dex                       ; NEXT: 256 volte
+      bne .Loop_Sum_Paddle_1    ; NEXT: 256 volte
 
-.Loop_Sum_B
-ADC POTY         ; Somma per 256 volte la lettura di .PADDLE_B
-BCC .No_Carry_B       ; ma scarta il byte basso della somma e conserva solo
-INY                   ; il byte alto in .Y. Questo equivale a sommare 256 volte e dividere il totale per 256: in altre parole si calcola la media di 256 letture.
+      tya                       ; Conserva il risultato sullo stack.
+      pha
 
-.No_Carry_B
-DEX
-BNE .Loop_Sum_B
+      ; Lettura della seconda paddle (#2 o #4).
+      lda CIAPRB                ; Leggi subito il pulsante.
+      and #%00001000            ; Isola il bit #3 e uniscilo all'altro.
+      ora ._TEMP
+      sta ._TEMP
 
-pla             ; Il risultato della seconda lettura è in .Y.
-tax   ; Recupera il risultato della prima lettura e conservalo in .X.
+      ; Somma 256 letture partendo da 128 e scarta il byte basso: .Y
+      ; conta i riporti, cioè il byte alto: la media arrotondata.
+      lda #128                  ; Parte da 128 per arrotondare.
+      ldy #0
+      clc
+      ldx #0                    ; FOR (Inizializzazione)
 
-lda ._TEMP       ; Ora recupera in .A il risultato della lettura dei pulsanti
-eor #%00001100  ; invertine lo stato (0 = rilasciato, 1 = premuto)
-lsr a           ; e spostalo nei bit 0-1.
-lsr a
+    .Loop_Sum_Paddle_2:
+      adc POTY                  ; FOR (Corpo)
 
-.Exit_PADDLE_READ
-CLI           ; Riabilita le interruzioni per poter rileggere la tastiera.
-RTS
+      bcc .Next_Sum_Paddle_2    ; IF: la somma ha un riporto
 
-._TEMP:
-!byte 0
+      iny                       ; Conta il riporto.
+      clc                       ; Il riporto è già contato.
+
+    .Next_Sum_Paddle_2:
+      dex                       ; NEXT: 256 volte
+      bne .Loop_Sum_Paddle_2    ; NEXT: 256 volte
+
+      pla                       ; .X = lettura della prima paddle.
+      tax
+
+      lda ._TEMP                ; Recupera lo stato dei pulsanti,
+      eor #%00001100            ; invertilo (0 = rilasciato) e
+      lsr a                     ; portalo nei bit #0 e #1.
+      lsr a
+
+    .Exit_PADDLE_READ:
+      cli                       ; Riabilita le interruzioni.
+      rts
+
+    ._TEMP:
+      !byte 0
+
+  !zone
+}

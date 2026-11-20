@@ -159,8 +159,8 @@
 ; 128 a 159 e il DEL dal codice 102, una trama a scacchiera.
 ; ******************************************************************************
 
-!source "chars_common.asm", once
-!source "chars_asc.asm", once
-!source "chars_ecm.asm", once
-!source "chars_pet.asm", once
-!source "chars_scr.asm", once
+!source <io/chars_common.asm>, once
+!source <io/chars_asc.asm>, once
+!source <io/chars_ecm.asm>, once
+!source <io/chars_pet.asm>, once
+!source <io/chars_scr.asm>, once

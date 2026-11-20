@@ -93,11 +93,11 @@
 ; sfondo ECM_BG1.
 ; ******************************************************************************
 
-!source "../chip/vic_ii_tools.asm", once
-!source "chars.asm", once
-!source "../mem/mem16.asm", once
-!source "../system/branch.asm", once
-!source "../system/standard.asm", once
+!source <chip/vic_ii_tools.asm>, once
+!source <io/chars.asm>, once
+!source <mem/mem16.asm>, once
+!source <system/branch.asm>, once
+!source <system/standard.asm>, once
 
 ; ==============================================================================
 ; MACRO: m_At
